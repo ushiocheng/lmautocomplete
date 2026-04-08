@@ -2,6 +2,7 @@
 
 > [warning]  
 > This repo is currently wrote by AI, which ironically defeats the safety checks specified. For this reason, before manual review and debug of the current code is completed this project will be in ALPHA with no PR accepted.
+> Working branch will contain AI code, code review is done by PR into main branch
 
 > Ever pull out Google or Claude for a simple thing that you just can't remember the command of? Ever receive a full essay when you just need one line? Try this
 
