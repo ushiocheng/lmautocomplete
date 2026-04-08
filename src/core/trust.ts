@@ -1,8 +1,7 @@
-import { ExecutionTier, ReviewState, RiskClass } from "../models/types.js";
+import { ExecutionTier, ReviewState, RiskClass } from "../Interfaces/types.js";
 import { printFunctionCall } from "./debug.js";
 
 export function resolveExecutionTier(risk: RiskClass, provenance: ReviewState): ExecutionTier {
-  printFunctionCall("core.trust.resolveExecutionTier", { risk, provenance });
   if (provenance === ReviewState.Generated) {
     return ExecutionTier.T3;
   }

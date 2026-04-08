@@ -2,7 +2,7 @@ import { mkdir, readdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import yaml from "js-yaml";
-import { templateEntrySchema } from "../models/schemas.js";
+import { templateEntrySchema } from "../Interfaces/schemas.js";
 import { printFunctionCall } from "../core/debug.js";
 import type {
   DependencyStatus,
@@ -10,9 +10,10 @@ import type {
   GeneratedTemplateDraft,
   Platform,
   TemplateEntry,
-} from "../models/types.js";
-import { ReviewState, RiskClass } from "../models/types.js";
+} from "../Interfaces/types.js";
+import { ReviewState, RiskClass } from "../Interfaces/types.js";
 
+// todo: Review this file
 const TEMPLATE_DIR = join(homedir(), ".config", "lmautocomplete", "templates");
 const BUNDLED_TEMPLATE_DIR = join(process.cwd(), "src", "db", "templates");
 
@@ -57,6 +58,15 @@ export async function seedTemplateDbIfEmpty(): Promise<void> {
     const raw = await readFile(srcPath, "utf-8");
     await writeFile(dstPath, raw, "utf-8");
   }
+}
+
+
+// todo: Review this function
+async function updateTemplates(): Promise<void> {
+  printFunctionCall("cli.index.updateTemplates");
+  const config = await loadConfig();
+  const result = await updateTemplatesFromGitHub(config.templateRepo, config.templateRepoRef);
+  console.log(chalk.green(`Updated ${result.updated} template(s) in ${result.templateDir}`));
 }
 
 export async function updateTemplatesFromGitHub(

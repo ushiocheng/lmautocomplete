@@ -1,7 +1,7 @@
-import { generatorResultSchema } from "../models/schemas.js";
-import { printFunctionCall } from "../core/debug.js";
+import { generatorResultSchema, generatorResultJsonSchema } from "../Interfaces/schemas.js";
+import { printFunctionCall, printIfDebug } from "../core/debug.js";
 import type { GeneratorAdapter } from "./interfaces.js";
-import type { GeneratorResult, ModelEndpointConfig, NormalizedInput } from "../models/types.js";
+import type { GeneratorResult, ModelEndpointConfig, NormalizedInput } from "../Interfaces/types.js";
 
 interface OpenAIResponse {
   choices?: Array<{
@@ -10,39 +10,6 @@ interface OpenAIResponse {
     };
   }>;
 }
-
-const generatorJsonSchema = {
-  name: "generator_response",
-  strict: true,
-  schema: {
-    type: "object",
-    properties: {
-      template: {
-        type: "object",
-        properties: {
-          intent: { type: "string" },
-          summary: { type: "string" },
-          slots: {
-            type: "array",
-            items: { type: "string" },
-          },
-          template: { type: "string" },
-          depends_on: {
-            type: "array",
-            items: { type: "string" },
-          },
-        },
-        required: ["intent", "summary", "slots", "template", "depends_on"],
-        additionalProperties: false,
-      },
-      command_preview: { type: "string" },
-      explanation: { type: "string" },
-      confidence: { type: "number" },
-    },
-    required: ["template", "command_preview", "explanation", "confidence"],
-    additionalProperties: false,
-  },
-} as const;
 
 export class OpenAIGeneratorAdapter implements GeneratorAdapter {
   async generate(input: NormalizedInput, endpoint: ModelEndpointConfig): Promise<GeneratorResult> {
@@ -70,7 +37,7 @@ export class OpenAIGeneratorAdapter implements GeneratorAdapter {
           model: endpoint.model,
           response_format: {
             type: "json_schema",
-            json_schema: generatorJsonSchema,
+            json_schema: generatorResultJsonSchema,
           },
           messages: [
             {
@@ -80,7 +47,10 @@ export class OpenAIGeneratorAdapter implements GeneratorAdapter {
             },
             {
               role: "user",
-              content: JSON.stringify({ instruction: input.normalized, candidates: input.candidates }),
+              content: JSON.stringify({
+                instruction: input.normalized,
+                quoted_tokens: input.quotedTokens,
+              }),
             },
           ],
           temperature: 0.2,
@@ -89,12 +59,14 @@ export class OpenAIGeneratorAdapter implements GeneratorAdapter {
       });
 
       if (!response.ok) {
+        printIfDebug("modelAdapters.openaiGenerator", `response not ok: ${response.status} ${response.statusText}`);
         throw new Error(`Generator endpoint request failed: ${response.status}`);
       }
 
       const payload = (await response.json()) as OpenAIResponse;
       const content = payload.choices?.[0]?.message?.content ?? "{}";
       const parsed = JSON.parse(content);
+      printIfDebug("modelAdapters.openaiGenerator", "response content", parsed);
       return generatorResultSchema.parse(parsed);
     } finally {
       clearTimeout(timeout);

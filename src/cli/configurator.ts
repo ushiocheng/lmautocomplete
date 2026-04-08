@@ -1,17 +1,15 @@
-import readline from "node:readline/promises";
+import { askBoolean, askNumber, askString } from "../cli/utilities.js";
 import { stdin as input, stdout as output } from "node:process";
 import chalk from "chalk";
 import { printFunctionCall } from "../core/debug.js";
 import { getConfigPath, loadConfig, saveConfig } from "../config/store.js";
-import type { AppConfig, ModelEndpointConfig } from "../models/types.js";
+import type { AppConfig, ModelEndpointConfig } from "../Interfaces/types.js";
 
 function toYesNo(value: boolean): string {
-  printFunctionCall("cli.configurator.toYesNo", { value });
   return value ? "Yes" : "No";
 }
 
 function maskToken(token?: string): string {
-  printFunctionCall("cli.configurator.maskToken", { hasToken: Boolean(token) });
   if (!token) {
     return "(empty)";
   }
@@ -21,59 +19,20 @@ function maskToken(token?: string): string {
   return `${token.slice(0, 3)}...${token.slice(-3)}`;
 }
 
-async function askBoolean(
-  rl: readline.Interface,
-  label: string,
-  current: boolean,
-): Promise<boolean> {
-  printFunctionCall("cli.configurator.askBoolean", { label, current });
-  const answer = (await rl.question(`${label} [${current ? "Y/n" : "y/N"}] `)).trim().toLowerCase();
-  if (!answer) {
-    return current;
-  }
-  return answer === "y" || answer === "yes";
-}
-
-async function askNumber(
-  rl: readline.Interface,
-  label: string,
-  current: number,
-  min = 1,
-): Promise<number> {
-  printFunctionCall("cli.configurator.askNumber", { label, current, min });
-  const answer = (await rl.question(`${label} (${current}): `)).trim();
-  if (!answer) {
-    return current;
-  }
-  const parsed = Number.parseInt(answer, 10);
-  if (!Number.isFinite(parsed) || parsed < min) {
-    console.log(chalk.yellow(`Invalid value, keeping ${current}.`));
-    return current;
-  }
-  return parsed;
-}
-
-async function askString(
-  rl: readline.Interface,
-  label: string,
-  current: string,
-): Promise<string> {
-  printFunctionCall("cli.configurator.askString", { label, hasCurrent: Boolean(current) });
-  const answer = await rl.question(`${label} (${current || "empty"}): `);
-  const trimmed = answer.trim();
-  if (!trimmed) {
-    return current;
-  }
-  return trimmed;
-}
-
+/**
+ * Configure a model endpoint by asking the user for input.
+ * @param rl Readline interface
+ * @param name Name of the endpoint (for display purposes)
+ * @param endpoint Current endpoint configuration
+ * @returns Updated endpoint configuration
+ */
 async function configureEndpoint(
   rl: readline.Interface,
   name: string,
   endpoint: ModelEndpointConfig,
 ): Promise<ModelEndpointConfig> {
   printFunctionCall("cli.configurator.configureEndpoint", { name });
-  console.log(chalk.cyan(`\nConfigure ${name}`));
+  console.log(chalk.cyan(`\nConfiguring ${name}`));
   const updated: ModelEndpointConfig = { ...endpoint };
 
   updated.enabled = await askBoolean(rl, `${name}.enabled`, updated.enabled);
@@ -84,13 +43,14 @@ async function configureEndpoint(
   console.log(`${name}.apiKey: ${maskToken(updated.apiKey)}`);
   const setApiKey = await askBoolean(rl, `Change ${name}.apiKey`, false);
   if (setApiKey) {
-    const token = (await rl.question(`Enter ${name}.apiKey (leave blank to clear): `)).trim();
+    const token = await askString(rl, `${name}.apiKey`, "");
     updated.apiKey = token;
   }
 
   return updated;
 }
 
+// todo: Review this function
 function printConfigSummary(config: AppConfig): void {
   printFunctionCall("cli.configurator.printConfigSummary");
   console.log(chalk.bold("\nCurrent config"));
@@ -110,6 +70,7 @@ function printConfigSummary(config: AppConfig): void {
   console.log("10) Exit without saving");
 }
 
+// todo: Review this function
 export async function runConfigurator(): Promise<void> {
   printFunctionCall("cli.configurator.runConfigurator");
   const config = await loadConfig();

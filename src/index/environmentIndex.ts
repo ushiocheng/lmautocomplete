@@ -1,17 +1,16 @@
 import { access, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { constants } from "node:fs";
 import { dirname, join } from "node:path";
-import { homedir, platform } from "node:os";
-import { execFile } from "node:child_process";
+import { homedir, platform,  } from "node:os";
+import { exec } from "node:child_process";
 import { promisify } from "node:util";
 import { printFunctionCall } from "../core/debug.js";
-import type { EnvironmentIndex } from "../models/types.js";
+import type { EnvironmentIndex } from "../Interfaces/types.js";
 
-const execFileAsync = promisify(execFile);
-const INDEX_PATH = join(homedir(), ".cache", "lmautocomplete", "environment-index.json");
+const execAsync = promisify(exec);
+const INDEX_PATH = join(homedir(), ".config", "lmautocomplete", "cache","environment-index.json");
 
 function detectPlatform(): EnvironmentIndex["os"] {
-  printFunctionCall("index.environmentIndex.detectPlatform");
   const p = platform();
   if (p === "linux") {
     return "linux";
@@ -23,7 +22,6 @@ function detectPlatform(): EnvironmentIndex["os"] {
 }
 
 async function detectShell(): Promise<string> {
-  printFunctionCall("index.environmentIndex.detectShell");
   if (process.env.SHELL) {
     return process.env.SHELL.split("/").pop() ?? "unknown";
   }
@@ -53,6 +51,7 @@ async function listExecutablesFromPath(): Promise<Set<string>> {
       }
     } catch {
       // Unreadable PATH segment.
+      console.warn(`Unable to read PATH segment: ${dir}`);
     }
   }
 
@@ -62,12 +61,8 @@ async function listExecutablesFromPath(): Promise<Set<string>> {
 async function listShellBuiltins(shell: string): Promise<Set<string>> {
   printFunctionCall("index.environmentIndex.listShellBuiltins", { shell });
   const out = new Set<string>();
-  if (shell !== "bash" && shell !== "zsh") {
-    return out;
-  }
-
-  try {
-    const { stdout } = await execFileAsync(shell, ["-lc", "compgen -b"]);
+  try{
+    const { stdout } = await execAsync('compgen -b');
     for (const line of stdout.split("\n")) {
       const val = line.trim();
       if (val) {
@@ -80,6 +75,7 @@ async function listShellBuiltins(shell: string): Promise<Set<string>> {
 
   return out;
 }
+
 
 export async function buildEnvironmentIndex(): Promise<EnvironmentIndex> {
   printFunctionCall("index.environmentIndex.buildEnvironmentIndex");
@@ -106,7 +102,6 @@ export async function writeEnvironmentIndex(index: EnvironmentIndex): Promise<vo
 }
 
 export async function readEnvironmentIndex(): Promise<EnvironmentIndex | null> {
-  printFunctionCall("index.environmentIndex.readEnvironmentIndex");
   try {
     const raw = await readFile(INDEX_PATH, "utf-8");
     return JSON.parse(raw) as EnvironmentIndex;
@@ -131,6 +126,5 @@ export async function getEnvironmentIndex(ttlDays: number): Promise<EnvironmentI
 }
 
 export function getEnvironmentIndexPath(): string {
-  printFunctionCall("index.environmentIndex.getEnvironmentIndexPath");
   return INDEX_PATH;
 }

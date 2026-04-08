@@ -3,7 +3,6 @@ import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import chalk from "chalk";
 import { printFunctionCall } from "./debug.js";
-import { classifyHeuristically } from "./heuristics.js";
 import { fillMissingSlots, listMissingSlots, renderTemplate } from "./render.js";
 import { resolveExecutionTier } from "./trust.js";
 import { normalizeInput } from "./normalize.js";
@@ -26,20 +25,21 @@ import {
   type PipelineDecision,
   type Platform,
   type TemplateMatch,
-} from "../models/types.js";
+} from "../Interfaces/types.js";
 import { OpenAIClassifierAdapter } from "../model-adapters/openaiClassifier.js";
 import { OpenAIGeneratorAdapter } from "../model-adapters/openaiGenerator.js";
 
 interface RunOptions {
   dryRun: boolean;
-  debug: boolean;
 }
 
+// todo: Review this function
 function mergeSlots(a: Record<string, string>, b: Record<string, string>): Record<string, string> {
   printFunctionCall("core.pipeline.mergeSlots");
   return { ...a, ...b };
 }
 
+// todo: Review this function
 function resolvePlatform(osName: string): Platform | null {
   printFunctionCall("core.pipeline.resolvePlatform", { osName });
   if (osName === "linux" || osName === "macos") {
@@ -48,6 +48,7 @@ function resolvePlatform(osName: string): Platform | null {
   return null;
 }
 
+// todo: Review this function
 function selectBestMatch(matches: TemplateMatch[]): TemplateMatch | null {
   printFunctionCall("core.pipeline.selectBestMatch", { count: matches.length });
   if (matches.length === 0) {
@@ -77,6 +78,7 @@ function selectBestMatch(matches: TemplateMatch[]): TemplateMatch | null {
   return sorted[0] ?? null;
 }
 
+// todo: Review this function
 async function insertOrExecute(command: string, tier: ExecutionTier, options: RunOptions, config: AppConfig): Promise<void> {
   printFunctionCall("core.pipeline.insertOrExecute", { tier });
   if (options.dryRun) {
@@ -104,6 +106,7 @@ async function insertOrExecute(command: string, tier: ExecutionTier, options: Ru
   console.log(chalk.gray("Insert into shell line buffer is expected via shell integration; command printed for now."));
 }
 
+// todo: Review this function
 async function runTier3Flow(command: string, options: RunOptions): Promise<boolean> {
   printFunctionCall("core.pipeline.runTier3Flow");
   console.log(chalk.red("--------------------------------------------------"));
@@ -135,6 +138,7 @@ async function runTier3Flow(command: string, options: RunOptions): Promise<boole
   }
 }
 
+// todo: Review this function
 export async function runPipeline(
   instruction: string,
   config: AppConfig,
@@ -147,24 +151,13 @@ export async function runPipeline(
   const normalized = normalizeInput(instruction);
   debug.push(`Normalized input: ${normalized.normalized}`);
 
-  const heuristic = classifyHeuristically(normalized);
-  debug.push(`Heuristic: ${heuristic ? heuristic.intent : "null"}`);
-
   const classifier = new OpenAIClassifierAdapter();
-  let classifierResult: ClassifierResult = {
-    intent: null,
-    slots: {},
-    confidence: 0,
-    needs_fallback: true,
-  };
-
-  if (heuristic) {
-    classifierResult = heuristic;
-  } else {
-    classifierResult = await classifier.classify(normalized, config.classifierEndpoint);
-    debug.push(`LM.intent: ${classifierResult.intent}`);
-    debug.push(`LM.confidence: ${classifierResult.confidence.toFixed(2)}`);
-  }
+  const classifierResult: ClassifierResult = await classifier.classify(
+    normalized,
+    config.classifierEndpoint,
+  );
+  debug.push(`LM.intent: ${classifierResult.intent}`);
+  debug.push(`LM.confidence: ${classifierResult.confidence.toFixed(2)}`);
 
   const templates = await loadTemplates();
   const env = await getEnvironmentIndex(config.environmentIndexTtlDays);
@@ -180,18 +173,18 @@ export async function runPipeline(
     };
   }
 
-  const candidates = classifierResult.intent
+  const templateCandidates = classifierResult.intent
     ? findTemplatesByIntent(templates, classifierResult.intent)
     : templates;
 
   const scored: TemplateMatch[] = [];
-  for (const template of candidates) {
+  for (const template of templateCandidates) {
     const tpl = getTemplateForPlatform(template, platform);
     if (!tpl) {
       continue;
     }
 
-    const slots = mergeSlots(normalized.candidates, classifierResult.slots);
+    const slots = mergeSlots({}, classifierResult.slots);
     const required = getTemplateDependencies(template, platform);
     const dependency = checkDependencyStatus(required, env);
     const textScore = scoreTemplateTextMatch(template, normalized.normalized);

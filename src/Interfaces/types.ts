@@ -31,8 +31,6 @@ export interface TemplateEntry {
   depends_on: Partial<Record<Platform, string[]>>;
   risk: RiskClass;
   review_state: ReviewState;
-  aliases?: string[];
-  examples?: string[];
 }
 
 export interface GeneratedTemplateDraft {
@@ -46,9 +44,7 @@ export interface GeneratedTemplateDraft {
 export interface NormalizedInput {
   raw: string;
   normalized: string;
-  tokens: string[];
   quotedTokens: string[];
-  candidates: Record<string, string>;
 }
 
 export interface ClassifierResult {
@@ -108,7 +104,6 @@ export interface ModelEndpointConfig {
 }
 
 export interface AppConfig {
-  consentGiven: boolean;
   enableTier0Immediate: boolean;
   uploadGeneratedTemplates: boolean;
   classifierEndpoint: ModelEndpointConfig;

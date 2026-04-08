@@ -1,14 +1,14 @@
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
-import { constants } from "node:fs";
+import { constants, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
-import { printFunctionCall } from "../core/debug.js";
-import type { AppConfig } from "../models/types.js";
+import { printFunctionCall, printIfDebug } from "../core/debug.js";
+import type { AppConfig } from "../Interfaces/types.js";
+import chalk from "chalk";
 
 const CONFIG_PATH = join(homedir(), ".config", "lmautocomplete", "config.json");
 
 const defaultConfig: AppConfig = {
-  consentGiven: false,
   enableTier0Immediate: true,
   uploadGeneratedTemplates: false,
   classifierEndpoint: {
@@ -25,19 +25,13 @@ const defaultConfig: AppConfig = {
     apiKey: "",
     timeoutMs: 5000,
   },
-  environmentIndexTtlDays: 30,
+  environmentIndexTtlDays: 7,
   templateRepo: "ushiocheng/lmautocomplete",
   templateRepoRef: "main",
 };
 
 export async function configExists(): Promise<boolean> {
-  printFunctionCall("config.store.configExists");
-  try {
-    await access(CONFIG_PATH, constants.F_OK);
-    return true;
-  } catch {
-    return false;
-  }
+  return existsSync(CONFIG_PATH);
 }
 
 export async function loadConfig(): Promise<AppConfig> {
@@ -58,17 +52,16 @@ export async function loadConfig(): Promise<AppConfig> {
       },
     };
   } catch {
+    console.log(chalk.yellow(`[Warn] Failed to load config from ${CONFIG_PATH}, using default config.`));
     return defaultConfig;
-  }
+  } 
 }
 
 export async function saveConfig(config: AppConfig): Promise<void> {
-  printFunctionCall("config.store.saveConfig");
   await mkdir(dirname(CONFIG_PATH), { recursive: true });
   await writeFile(CONFIG_PATH, `${JSON.stringify(config, null, 2)}\n`, "utf-8");
 }
 
 export function getConfigPath(): string {
-  printFunctionCall("config.store.getConfigPath");
   return CONFIG_PATH;
 }

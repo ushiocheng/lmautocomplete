@@ -9,9 +9,7 @@ export function isDebugEnabled(): boolean {
 }
 
 export function printIfDebug(scope: string, message: string, payload?: unknown): void {
-  if (!debugEnabled) {
-    return;
-  }
+  if (!debugEnabled) return;
 
   if (payload === undefined) {
     console.log(`[DEBUG] [${scope}] ${message}`);
@@ -26,5 +24,5 @@ export function printIfDebug(scope: string, message: string, payload?: unknown):
 }
 
 export function printFunctionCall(functionName: string, payload?: unknown): void {
-  printIfDebug(functionName, "called", payload);
+  printIfDebug(functionName, "is called", payload);
 }

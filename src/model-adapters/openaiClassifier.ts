@@ -1,7 +1,8 @@
-import { classifierResultSchema } from "../models/schemas.js";
+import { classifierResultSchema, classifierResultJsonSchema } from "../Interfaces/schemas.js";
 import { printFunctionCall, printIfDebug } from "../core/debug.js";
 import type { ClassifierAdapter } from "./interfaces.js";
-import type { ClassifierResult, ModelEndpointConfig, NormalizedInput } from "../models/types.js";
+import type { ClassifierResult, ModelEndpointConfig, NormalizedInput } from "../Interfaces/types.js";
+import { availableTemplates } from "../db/loader.js"
 
 interface OpenAIResponse {
   choices?: Array<{
@@ -10,25 +11,6 @@ interface OpenAIResponse {
     };
   }>;
 }
-
-const classifierJsonSchema = {
-  name: "classifier_response",
-  strict: true,
-  schema: {
-    type: "object",
-    properties: {
-      intent: { type: ["string", "null"] },
-      slots: {
-        type: "object",
-        additionalProperties: { type: "string" },
-      },
-      confidence: { type: "number" },
-      needs_fallback: { type: "boolean" },
-    },
-    required: ["intent", "slots", "confidence", "needs_fallback"],
-    additionalProperties: false,
-  },
-} as const;
 
 export class OpenAIClassifierAdapter implements ClassifierAdapter {
   async classify(input: NormalizedInput, endpoint: ModelEndpointConfig): Promise<ClassifierResult> {
@@ -61,17 +43,25 @@ export class OpenAIClassifierAdapter implements ClassifierAdapter {
           model: endpoint.model,
           response_format: {
             type: "json_schema",
-            json_schema: classifierJsonSchema,
+            json_schema: classifierResultJsonSchema,
           },
           messages: [
             {
               role: "system",
               content:
-                "Classify user shell intent and slots. Return JSON only: {intent:string|null,slots:object,confidence:number,needs_fallback:boolean}. Never return shell command.",
+                "Classify user shell intent and quoted or unquoted tokens as template arguments aka slots. Return JSON only. Never return shell command.",
             },
             {
               role: "user",
-              content: JSON.stringify({ instruction: input.normalized, candidates: input.candidates }),
+              content: JSON.stringify({
+                instruction: input.normalized,
+                quoted_tokens: input.quotedTokens,
+              }),
+            },
+            {
+              role: "system",
+              content:
+                `Available Intents: ${availableTemplates.map(t => t.intent).join(", ")}`,
             },
           ],
           temperature: 0,

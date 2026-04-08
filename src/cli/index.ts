@@ -3,7 +3,8 @@ import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import chalk from "chalk";
 import { configExists, loadConfig, saveConfig } from "../config/store.js";
-import { loadTemplates, seedTemplateDbIfEmpty, updateTemplatesFromGitHub } from "../db/loader.js";
+import { loadTemplates, seedTemplateDbIfEmpty, updateTemplates } from "../db/loader.js";
+import { askBoolean, askNumber, askString } from "../cli/utilities.js";
 import {
   buildEnvironmentIndex,
   getEnvironmentIndexPath,
@@ -18,12 +19,11 @@ import {
   ExecutionTier,
   ReviewState,
   RiskClass,
-} from "../models/types.js";
+} from "../Interfaces/types.js";
 
 interface ParsedArgs {
   dryRun: boolean;
   debug: boolean;
-  refresh: boolean;
   update: boolean;
   listIntents: boolean;
   configCommand: boolean;
@@ -31,7 +31,6 @@ interface ParsedArgs {
 }
 
 function formatRiskLabel(risk: RiskClass): string {
-  printFunctionCall("cli.index.formatRiskLabel", { risk });
   const label = risk.replaceAll("_", " ").toUpperCase();
   switch (risk) {
     case RiskClass.Safe:
@@ -52,7 +51,6 @@ function formatRiskLabel(risk: RiskClass): string {
 }
 
 function formatTierLabel(tier: ExecutionTier): string {
-  printFunctionCall("cli.index.formatTierLabel", { tier });
   switch (tier) {
     case ExecutionTier.T0:
       return chalk.green(tier);
@@ -68,7 +66,6 @@ function formatTierLabel(tier: ExecutionTier): string {
 }
 
 function formatProvenanceLabel(provenance: ReviewState): string {
-  printFunctionCall("cli.index.formatProvenanceLabel", { provenance });
   const label = provenance.replaceAll("_", " ");
   switch (provenance) {
     case ReviewState.OwnerReviewed:
@@ -90,7 +87,6 @@ function parseArgs(argv: string[]): ParsedArgs {
   const parsed: ParsedArgs = {
     dryRun: false,
     debug: false,
-    refresh: false,
     update: false,
     listIntents: false,
     configCommand: false,
@@ -102,8 +98,6 @@ function parseArgs(argv: string[]): ParsedArgs {
       parsed.dryRun = true;
     } else if (arg === "--debug") {
       parsed.debug = true;
-    } else if (arg === "--refresh") {
-      parsed.refresh = true;
     } else if (arg === "update") {
       parsed.update = true;
     } else if (arg === "--list-intents") {
@@ -118,25 +112,22 @@ function parseArgs(argv: string[]): ParsedArgs {
   return parsed;
 }
 
-async function askInstallConsent(): Promise<void> {
-  printFunctionCall("cli.index.askInstallConsent");
+async function firstRunFlow(): Promise<void> {
+  printFunctionCall("cli.index.firstRunFlow");
   const config = await loadConfig();
   const rl = readline.createInterface({ input, output });
   try {
     console.log("Installation consent:");
     console.log("Templates are packaged with the application. Some of them can run without confirmation. So you need to be sure you trust the source of these templates.");
-    const consent = (await rl.question("Trust this repo / template source? [y/N] ")).trim().toLowerCase();
-    config.consentGiven = consent === "y";
+    const consent = await askBoolean(rl, "Trust this repo / template source?", false);
 
-    const tier0 = (await rl.question("Enable immediate execution for safer commands (Tier-0)? [Y/n] ")).trim().toLowerCase();
-    config.enableTier0Immediate = tier0 !== "n";
+    config.enableTier0Immediate = await askBoolean(rl, "Enable immediate execution for safer commands (Tier-0)?", true);
 
-    const upload = (await rl.question("Upload generated templates/edits? [y/N] ")).trim().toLowerCase();
-    config.uploadGeneratedTemplates = upload === "y";
+    config.uploadGeneratedTemplates = await askBoolean(rl, "Upload generated templates/edits?", false);;
 
     await saveConfig(config);
-    await seedTemplateDbIfEmpty();
     console.log(chalk.green("Config saved."));
+    await seedTemplateDbIfEmpty();
     printBashIntegrationHint();
     printZshIntegrationHint();
   } finally {
@@ -145,30 +136,21 @@ async function askInstallConsent(): Promise<void> {
 }
 
 async function bootstrapIfNeeded(): Promise<void> {
-  printFunctionCall("cli.index.bootstrapIfNeeded");
   if (await configExists()) {
     return;
   }
 
   console.log(chalk.cyan("First run detected. Starting install flow..."));
-  await askInstallConsent();
+  await firstRunFlow();
 }
 
 async function readPromptInteractive(): Promise<string> {
-  printFunctionCall("cli.index.readPromptInteractive");
   const rl = readline.createInterface({ input, output });
   try {
     return (await rl.question("> ")).trim();
   } finally {
     rl.close();
   }
-}
-
-async function refreshEnvironmentIndex(): Promise<void> {
-  printFunctionCall("cli.index.refreshEnvironmentIndex");
-  const rebuilt = await buildEnvironmentIndex();
-  await writeEnvironmentIndex(rebuilt);
-  console.log(chalk.green(`Environment index refreshed at ${getEnvironmentIndexPath()}`));
 }
 
 async function listIntents(): Promise<void> {
@@ -179,28 +161,16 @@ async function listIntents(): Promise<void> {
   }
 }
 
-async function updateTemplates(): Promise<void> {
-  printFunctionCall("cli.index.updateTemplates");
-  const config = await loadConfig();
-  const result = await updateTemplatesFromGitHub(config.templateRepo, config.templateRepoRef);
-  console.log(chalk.green(`Updated ${result.updated} template(s) in ${result.templateDir}`));
-}
-
 async function main(): Promise<void> {
   printFunctionCall("cli.index.main");
   setDebugEnabled(process.argv.includes("--debug"));
-  const parsed = parseArgs(process.argv.slice(2));
-  setDebugEnabled(parsed.debug);
-
+  
   await bootstrapIfNeeded();
 
+  const parsed = parseArgs(process.argv.slice(2));
+  
   if (parsed.configCommand) {
     await runConfigurator();
-    return;
-  }
-
-  if (parsed.refresh) {
-    await refreshEnvironmentIndex();
     return;
   }
 
@@ -225,7 +195,6 @@ async function main(): Promise<void> {
 
   const decision = await runPipeline(prompt, config, {
     dryRun: parsed.dryRun,
-    debug: parsed.debug,
   });
 
   console.log(
@@ -235,12 +204,6 @@ async function main(): Promise<void> {
 
   if (decision.command) {
     console.log(decision.command);
-  }
-
-  if (parsed.debug) {
-    for (const line of decision.debug) {
-      console.log(`[DEBUG] ${line}`);
-    }
   }
 }
 

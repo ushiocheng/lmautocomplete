@@ -3,7 +3,7 @@ import type {
   GeneratorResult,
   ModelEndpointConfig,
   NormalizedInput,
-} from "../models/types.js";
+} from "../Interfaces/types.js";
 
 export interface ClassifierAdapter {
   classify(input: NormalizedInput, endpoint: ModelEndpointConfig): Promise<ClassifierResult>;
