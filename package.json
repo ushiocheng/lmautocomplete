@@ -10,7 +10,8 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/cli/index.js",
     "dev": "tsx src/cli/index.ts",
-    "check": "tsc -p tsconfig.json --noEmit"
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx tests/testRunner.ts"
   },
   "engines": {
     "node": ">=22"

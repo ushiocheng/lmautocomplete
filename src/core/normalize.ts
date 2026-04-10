@@ -7,7 +7,7 @@ export function normalizeInput(raw: string): NormalizedInput {
   const quotedTokens = [...raw.matchAll(/"([^"]+)"|'([^']+)'/g)].map((m) => m[1] ?? m[2]);
   const normalized = raw.trim().toLowerCase().replace(/\s+/g, " ");
 
-  console.log({ quotedTokens, normalized });
+  // console.log({ quotedTokens, normalized });
   return {
     raw,
     normalized,

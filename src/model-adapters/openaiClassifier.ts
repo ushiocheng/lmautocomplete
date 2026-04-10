@@ -29,7 +29,10 @@ export class OpenAIClassifierAdapter implements ClassifierAdapter {
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), endpoint.timeoutMs);
+    const timeout = setTimeout(() => {
+      console.log("[WARN] OAI Classifier request timed out.");
+      controller.abort();
+    }, endpoint.timeoutMs);
 
     try {
       const response = await fetch(`${endpoint.baseUrl.replace(/\/$/, "")}/chat/completions`, {
@@ -69,7 +72,7 @@ export class OpenAIClassifierAdapter implements ClassifierAdapter {
         }),
       });
 
-      if (!response.ok) {
+      if (!(await response).ok) {
         printIfDebug("modelAdapters.openaiClassifier", `response not ok: ${response.status} ${response.statusText}`);
         return {
           intent: null,
@@ -80,9 +83,10 @@ export class OpenAIClassifierAdapter implements ClassifierAdapter {
       }
 
       const payload = (await response.json()) as OpenAIResponse;
+      printIfDebug("modelAdapters.openaiClassifier", "response received", payload);
       const content = payload.choices?.[0]?.message?.content ?? "{}";
       const parsed = JSON.parse(content);
-      printIfDebug("modelAdapters.openaiClassifier", "response content", content);
+      printIfDebug("modelAdapters.openaiClassifier", "response content", parsed);
       return classifierResultSchema.parse(parsed);
     } catch {
       return {

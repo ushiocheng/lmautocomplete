@@ -3,22 +3,12 @@ import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import chalk from "chalk";
 import { configExists, loadConfig, saveConfig } from "../config/store.js";
-import { loadTemplates, seedTemplateDbIfEmpty, updateTemplates } from "../db/loader.js";
-import { askBoolean, askNumber, askString } from "../cli/utilities.js";
-import {
-  buildEnvironmentIndex,
-  getEnvironmentIndexPath,
-  writeEnvironmentIndex,
-} from "../index/environmentIndex.js";
+import { loadTemplates, updateTemplates } from "../db/loader.js";
+import { askBoolean } from "../cli/utilities.js";
 import { runPipelineBlocking } from "../core/pipeline.js";
 import { printFunctionCall, setDebugEnabled } from "../core/debug.js";
 import { printIntegrationHint } from "../shell/shellUtil.js";
 import { runConfigurator } from "./configurator.js";
-import {
-  ExecutionTier,
-  ReviewState,
-  RiskClass,
-} from "../Interfaces/types.js";
 
 interface ParsedArgs {
   dryRun: boolean;
@@ -66,8 +56,9 @@ async function firstRunFlow(): Promise<void> {
   const rl = readline.createInterface({ input, output });
   try {
     console.log("Installation consent:");
-    console.log("Templates are packaged with the application. Some of them can run without confirmation. So you need to be sure you trust the source of these templates.");
-    const consent = await askBoolean(rl, "Trust this repo / template source?", false);
+    console.log("Templates are packaged with the application. Some of them can run without confirmation. So you need to be sure you trust the source of these templates. You must accept to continue.");
+    const consent = await askBoolean(rl, "Trust this repo / template source?", true);
+    if (!consent) process.exit(3);
 
     config.enableTier0Immediate = await askBoolean(rl, "Enable immediate execution for safer commands (Tier-0)?", true);
 

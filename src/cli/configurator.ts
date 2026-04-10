@@ -1,5 +1,6 @@
-import { askBoolean, askNumber, askString, assert } from "../cli/utilities.js";
+import { askBoolean, askNumber, askString } from "../cli/utilities.js";
 import { stdin as input, stdout as output } from "node:process";
+import readline from "node:readline/promises";
 import chalk from "chalk";
 import { printFunctionCall } from "../core/debug.js";
 import { getConfigPath, loadConfig, saveConfig } from "../config/store.js";

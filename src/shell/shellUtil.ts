@@ -11,7 +11,7 @@ export enum Shell {
 
 let currentShell: Shell | null = null;
 
-function detectShell(): Shell {
+export function detectShell(): Shell {
     if (currentShell !== null) return currentShell;
 	const shellName = process.env.SHELL?.split("/").pop()?.toLowerCase();
 	if (shellName === "bash") {

@@ -11,14 +11,17 @@ export class bashIntegration implements ShellIntegration {
 
   editableBuffer(command: string): string {
     console.log(chalk.yellow("WARN: Editable buffer not implemented for bash yet."));
+    console.log(command);
     return command;
   }
 
   executeCommand(command: string): void {
     console.log(chalk.yellow("WARN: Command execution not implemented for bash yet."));
+    console.log(command);
   }
 
   insertCommand(command: string): void {
     console.log(chalk.yellow("WARN: Command insertion not implemented for bash yet."));
+    console.log(command);
   }
 }

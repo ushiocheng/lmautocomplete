@@ -11,14 +11,17 @@ export class zshIntegration implements ShellIntegration {
 
   editableBuffer(command: string): string {
     console.log(chalk.yellow("WARN: Editable buffer not implemented for zsh yet."));
+    console.log(command);
     return command;
   }
 
   executeCommand(command: string): void {
     console.log(chalk.yellow("WARN: Command execution not implemented for zsh yet."));
+    console.log(command);
   }
 
   insertCommand(command: string): void {
     console.log(chalk.yellow("WARN: Command insertion not implemented for zsh yet."));
+    console.log(command);
   }
 }

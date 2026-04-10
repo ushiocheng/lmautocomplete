@@ -23,7 +23,10 @@ export class OpenAIGeneratorAdapter implements GeneratorAdapter {
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), endpoint.timeoutMs);
+    const timeout = setTimeout(() => {
+      console.log("[WARN] OAI Generator request timed out.");
+      controller.abort();
+    }, endpoint.timeoutMs);
 
     try {
       const response = await fetch(`${endpoint.baseUrl.replace(/\/$/, "")}/chat/completions`, {
@@ -58,12 +61,13 @@ export class OpenAIGeneratorAdapter implements GeneratorAdapter {
         }),
       });
 
-      if (!response.ok) {
+      if (!(await response).ok) {
         printIfDebug("modelAdapters.openaiGenerator", `response not ok: ${response.status} ${response.statusText}`);
         throw new Error(`Generator endpoint request failed: ${response.status}`);
       }
 
       const payload = (await response.json()) as OpenAIResponse;
+      printIfDebug("modelAdapters.openaiGenerator", "response received", payload);
       const content = payload.choices?.[0]?.message?.content ?? "{}";
       const parsed = JSON.parse(content);
       printIfDebug("modelAdapters.openaiGenerator", "response content", parsed);

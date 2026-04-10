@@ -1,4 +1,5 @@
 import readline from "node:readline/promises";
+import chalk from "chalk";
 
 export async function askBoolean(
   rl: readline.Interface,
