@@ -1,281 +1,178 @@
-import { spawn } from "node:child_process";
 import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import chalk from "chalk";
-import { printFunctionCall } from "./debug.js";
-import { fillMissingSlots, listMissingSlots, renderTemplate } from "./render.js";
+import { printFunctionCall, printIfDebug } from "./debug.js";
+import { fillMissingSlotsIfAny, renderTemplate } from "./render.js";
 import { resolveExecutionTier } from "./trust.js";
 import { normalizeInput } from "./normalize.js";
-import {
-  checkDependencyStatus,
-  findTemplatesByIntent,
-  getTemplateDependencies,
-  getTemplateForPlatform,
-  loadTemplates,
-  saveGeneratedTemplate,
-  scoreTemplateTextMatch,
-} from "../db/loader.js";
+import { findTemplatesByIntent, saveGeneratedTemplate } from "../db/loader.js";
 import { getEnvironmentIndex } from "../index/environmentIndex.js";
 import {
   ExecutionTier,
   ReviewState,
   RiskClass,
+  formatTierLabel,
+  formatRiskLabel,
+  formatProvenanceLabel,
   type AppConfig,
-  type ClassifierResult,
-  type PipelineDecision,
   type Platform,
-  type TemplateMatch,
 } from "../Interfaces/types.js";
 import { OpenAIClassifierAdapter } from "../model-adapters/openaiClassifier.js";
 import { OpenAIGeneratorAdapter } from "../model-adapters/openaiGenerator.js";
+import { askBoolean, assert } from "../cli/utilities.js";
+import { editableBuffer, executeCommand, insertCommand } from "../shell/shellUtil.js";
 
-interface RunOptions {
-  dryRun: boolean;
-}
-
-// todo: Review this function
-function mergeSlots(a: Record<string, string>, b: Record<string, string>): Record<string, string> {
-  printFunctionCall("core.pipeline.mergeSlots");
-  return { ...a, ...b };
-}
-
-// todo: Review this function
-function resolvePlatform(osName: string): Platform | null {
-  printFunctionCall("core.pipeline.resolvePlatform", { osName });
-  if (osName === "linux" || osName === "macos") {
-    return osName;
-  }
+function resolvePlatform(os: string): Platform | null {
+  if (os === "linux" || os === "macos") return os;
   return null;
 }
 
-// todo: Review this function
-function selectBestMatch(matches: TemplateMatch[]): TemplateMatch | null {
-  printFunctionCall("core.pipeline.selectBestMatch", { count: matches.length });
-  if (matches.length === 0) {
-    return null;
-  }
-
-  const sorted = [...matches].sort((a, b) => {
-    if (a.dependency.executable !== b.dependency.executable) {
-      return a.dependency.executable ? -1 : 1;
-    }
-    if (a.confidence !== b.confidence) {
-      return b.confidence - a.confidence;
-    }
-    const provenanceRank: Record<ReviewState, number> = {
-      [ReviewState.OwnerReviewed]: 3,
-      [ReviewState.CommunityReviewed]: 2,
-      [ReviewState.Unreviewed]: 1,
-      [ReviewState.Generated]: 0,
-    };
-    const p = provenanceRank[b.template.review_state] - provenanceRank[a.template.review_state];
-    if (p !== 0) {
-      return p;
-    }
-    return b.slotValues ? Object.keys(b.slotValues).length - Object.keys(a.slotValues).length : 0;
-  });
-
-  return sorted[0] ?? null;
-}
-
-// todo: Review this function
-async function insertOrExecute(command: string, tier: ExecutionTier, options: RunOptions, config: AppConfig): Promise<void> {
-  printFunctionCall("core.pipeline.insertOrExecute", { tier });
-  if (options.dryRun) {
+async function insertOrExecute(command: string, tier: ExecutionTier, dryRun: boolean, config: AppConfig): Promise<void> {
+  printFunctionCall("core.pipeline.insertOrExecute", { command, tier, dryRun, config });
+  if (dryRun) {
     console.log(chalk.cyan(`Dry-run: ${command}`));
     return;
   }
 
   if (tier === ExecutionTier.T0) {
     if (!config.enableTier0Immediate) {
-      console.log(chalk.yellow("T0 immediate execution disabled by config; printing command:"));
-      console.log(command);
+      console.log(chalk.yellow("T0 immediate execution disabled by config; inserting command:"));
+      insertCommand(command);
       return;
     }
-
     console.log(chalk.green(`Running: ${command}`));
-    await new Promise<void>((resolve) => {
-      const child = spawn(command, { shell: true, stdio: "inherit" });
-      child.on("exit", () => resolve());
-      child.on("error", () => resolve());
-    });
+    executeCommand(command);
     return;
   }
-
-  console.log(command);
-  console.log(chalk.gray("Insert into shell line buffer is expected via shell integration; command printed for now."));
+  console.log(chalk.blue(`Inserting Command: ${command}`));
+  insertCommand(command);
 }
 
-// todo: Review this function
-async function runTier3Flow(command: string, options: RunOptions): Promise<boolean> {
+/**
+ * Completes Tier 3 flow, returns a boolean if the input is unedited & accepted for storage
+ */
+async function runTier3Flow(command: string, dryRun: boolean): Promise<boolean> {
   printFunctionCall("core.pipeline.runTier3Flow");
   console.log(chalk.red("--------------------------------------------------"));
   console.log(chalk.red(" WARNING: LLM Generated, review before proceeding"));
   console.log(chalk.red("--------------------------------------------------"));
-  console.log(command);
+  const editedCommand = editableBuffer(command);
   console.log(chalk.red("--------------------------------------------------"));
 
-  if (options.dryRun) {
+  if (dryRun) return false;
+  if (editedCommand !== command) {
+    // User edited command, just insert it
+    insertCommand(editedCommand);
     return false;
   }
 
   const rl = readline.createInterface({ input, output });
   try {
-    const accept = (await rl.question("Accept Generated Command? [Y/N] ")).trim().toLowerCase();
-    if (accept === "y") {
-      console.log(chalk.gray("Command accepted. Insert into shell is delegated to shell integration; printing command."));
-      console.log(command);
+    const accept = await askBoolean(rl,"Accept Generated Command?",false);
+    if (accept) {
+      console.log(chalk.blue(`Inserting: ${command}`));
+      insertCommand(command);
       return true;
     }
 
-    const revise = (await rl.question("Revise Prompt? [Y/n] ")).trim().toLowerCase();
-    if (revise === "y" || revise === "") {
-      console.log(chalk.gray("Prompt revision flow not implemented yet in v1 scaffold."));
-    }
+    // const revise = await askBoolean(rl,"Revise Prompt?",false);
+    // if (revise) {
+    //   console.log(chalk.gray("Prompt revision flow not implemented yet in v1 scaffold."));
+    // }
     return false;
   } finally {
     rl.close();
   }
 }
 
-// todo: Review this function
 export async function runPipeline(
   instruction: string,
   config: AppConfig,
-  options: RunOptions,
-): Promise<PipelineDecision> {
+  dryRun: boolean
+): Promise<void> {
   printFunctionCall("core.pipeline.runPipeline", { instruction });
-  const debug: string[] = [];
-  debug.push(`Entered: ${instruction}`);
-
   const normalized = normalizeInput(instruction);
-  debug.push(`Normalized input: ${normalized.normalized}`);
+  printIfDebug("core.pipeline.runPipeline", `Normalized input: ${normalized.normalized}`);
 
-  const classifier = new OpenAIClassifierAdapter();
-  const classifierResult: ClassifierResult = await classifier.classify(
-    normalized,
-    config.classifierEndpoint,
-  );
-  debug.push(`LM.intent: ${classifierResult.intent}`);
-  debug.push(`LM.confidence: ${classifierResult.confidence.toFixed(2)}`);
+  const classifier = new OpenAIClassifierAdapter(); // todo: add new classifier options
+  const classifierResult = await classifier.classify(normalized, config.classifierEndpoint);
+  printIfDebug("core.pipeline.runPipeline", `LM.intent: ${classifierResult.intent}`);
+  printIfDebug("core.pipeline.runPipeline", `LM.confidence: ${classifierResult.confidence.toFixed(2)}`);
+  printIfDebug("core.pipeline.runPipeline", "LM.slots:", classifierResult.slots);
 
-  const templates = await loadTemplates();
   const env = await getEnvironmentIndex(config.environmentIndexTtlDays);
   const platform = resolvePlatform(env.os);
-
+  let generateCommand = false;
+  
+  const template = classifierResult.intent ? await findTemplatesByIntent(classifierResult.intent) : null;
+  
   if (!platform) {
-    return {
-      tier: ExecutionTier.T3,
-      risk: RiskClass.Unknown,
-      provenance: ReviewState.Generated,
-      explanation: "Unsupported OS platform for template execution.",
-      debug,
-    };
+    console.log(chalk.yellow(`Unknown OS platform ${env.os}.`));
+    generateCommand = true;
+  }
+  if (!template) {
+    console.log(chalk.yellow("No template matched."));
+    generateCommand = true;
+  } else if (!(platform&&template?.template_by_platform?.[platform])) {
+    console.log(chalk.yellow("Template found does not support current OS."));
+    generateCommand = true;
   }
 
-  const templateCandidates = classifierResult.intent
-    ? findTemplatesByIntent(templates, classifierResult.intent)
-    : templates;
+  if (!generateCommand) {
+    assert(platform);
+    const platformTemplate = template?.template_by_platform?.[platform] ?? null;
 
-  const scored: TemplateMatch[] = [];
-  for (const template of templateCandidates) {
-    const tpl = getTemplateForPlatform(template, platform);
-    if (!tpl) {
-      continue;
-    }
+    assert(template && platformTemplate);
+    const tier = resolveExecutionTier(template.risk, template.review_state);
+    const filledSlots = await fillMissingSlotsIfAny(platformTemplate, classifierResult.slots);
+    const rendered = renderTemplate(platformTemplate, filledSlots);
 
-    const slots = mergeSlots({}, classifierResult.slots);
-    const required = getTemplateDependencies(template, platform);
-    const dependency = checkDependencyStatus(required, env);
-    const textScore = scoreTemplateTextMatch(template, normalized.normalized);
-    const confidence = classifierResult.intent === template.intent
-      ? Math.max(classifierResult.confidence, textScore)
-      : textScore;
-
-    scored.push({
-      template,
-      rendered: tpl,
-      slotValues: slots,
-      confidence,
-      dependency,
-    });
-  }
-
-  const best = selectBestMatch(scored.filter((x) => x.confidence > 0.2 || x.template.intent === classifierResult.intent));
-
-  if (best && best.rendered) {
-    const missingSlots = listMissingSlots(best.rendered, best.slotValues);
-    const filledSlots = await fillMissingSlots(missingSlots, best.slotValues);
-    const rendered = renderTemplate(best.rendered, filledSlots);
-
-    if (!best.dependency.executable) {
-      const explanation = `Template matched but missing dependencies: ${best.dependency.missing.join(", ")}`;
-      debug.push(explanation);
-      return {
-        tier: ExecutionTier.T2,
-        risk: best.template.risk,
-        provenance: best.template.review_state,
-        command: rendered,
-        explanation,
-        missingDependencies: best.dependency.missing,
-        debug,
-      };
-    }
-
-    const tier = resolveExecutionTier(best.template.risk, best.template.review_state);
-    const decision: PipelineDecision = {
-      tier,
-      risk: best.template.risk,
-      provenance: best.template.review_state,
-      command: rendered,
-      explanation: "Template matched and dependencies are satisfied.",
-      debug,
-    };
+    console.log(`[${formatTierLabel(tier)}] Risk: ${formatRiskLabel(template.risk)}  Provenance: ${formatProvenanceLabel(template.review_state)}`);
 
     if (tier === ExecutionTier.T2) {
       console.log(chalk.yellow("Warning: This command is not audited."));
-      if (best.template.risk === RiskClass.Destructive) {
-        console.log(chalk.red("Warning: Destructive command."));
-      }
-      if (best.template.review_state === ReviewState.Unreviewed) {
-        console.log(chalk.hex("#ff8c00")("Warning: Unreviewed command template."));
+      if (template.review_state === ReviewState.Unreviewed) {
+        console.log(chalk.red("Warning: Unreviewed command template."));
       }
     }
+    if (template.risk === RiskClass.Destructive) {
+      console.log(chalk.red("Warning: Destructive command."));
+    }
 
-    await insertOrExecute(rendered, tier, options, config);
-    return decision;
-  }
+    await insertOrExecute(rendered, tier, dryRun, config);
+    return;
+  } // Implicit else, Generating command logic after this line
 
   if (!config.generatorEndpoint.enabled) {
-    return {
-      tier: ExecutionTier.T3,
-      risk: RiskClass.Unknown,
-      provenance: ReviewState.Generated,
-      explanation:
-        "No trusted template matched and generation endpoint is not configured. Configure generator endpoint to enable Tier-3 suggestions.",
-      debug,
-    };
+    console.log(chalk.yellow("No trusted template matched and generation endpoint is not configured. Configure generator endpoint to enable Tier-3 suggestions."));
+    return;
   }
 
   const generator = new OpenAIGeneratorAdapter();
   const generated = await generator.generate(normalized, config.generatorEndpoint);
-  const fallbackDecision: PipelineDecision = {
-    tier: ExecutionTier.T3,
-    risk: RiskClass.Unknown,
-    provenance: ReviewState.Generated,
-    command: generated.command_preview,
-    explanation: generated.explanation,
-    debug,
-  };
-
-  const accepted = await runTier3Flow(generated.command_preview, options);
+  const accepted = await runTier3Flow(generated.command_preview, dryRun);
   if (accepted) {
-    const savedPath = await saveGeneratedTemplate(platform, generated.template);
-    if (savedPath) {
-      debug.push(`Saved generated template: ${savedPath}`);
-    } else {
-      debug.push("Generated template not saved due to intent collision with non-generated template.");
+    if (!platform) {
+      printIfDebug("core.pipeline.runPipeline", "Generated template not saved because platform is unsupported.");
     }
+    assert(platform);
+    const savedPath = await saveGeneratedTemplate(platform, generated.template);
+    printIfDebug("core.pipeline.runPipeline",
+      savedPath
+        ? `Saved generated template: ${savedPath}`
+        : "Generated template not saved due to intent collision with non-generated template."
+    );
   }
-  return fallbackDecision;
+
+
+  return;
+}
+
+export async function runPipelineBlocking(
+  instruction: string,
+  config: AppConfig,
+  dryRun: boolean,
+): Promise<void> {
+  // Explicit sequencing boundary for callers.
+  await runPipeline(instruction, config, dryRun);
 }

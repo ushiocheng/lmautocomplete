@@ -1,4 +1,58 @@
+import chalk from "chalk";
+
 export type Platform = "linux" | "macos";
+
+
+export function formatRiskLabel(risk: RiskClass): string {
+  const label = risk.replaceAll("_", " ").toUpperCase();
+  switch (risk) {
+    case RiskClass.Safe:
+      return chalk.green(label);
+    case RiskClass.SemiSafe:
+      return chalk.cyan(label);
+    case RiskClass.Mutating:
+      return chalk.yellow(label);
+    case RiskClass.Privileged:
+      return chalk.hex("#ff8c00")(label);
+    case RiskClass.Destructive:
+      return chalk.red.bold(label);
+    case RiskClass.Unknown:
+      return chalk.redBright.bold(label);
+    default:
+      return label;
+  }
+}
+
+export function formatTierLabel(tier: ExecutionTier): string {
+  switch (tier) {
+    case ExecutionTier.T0:
+      return chalk.green(tier);
+    case ExecutionTier.T1:
+      return chalk.cyan(tier);
+    case ExecutionTier.T2:
+      return chalk.yellow(tier);
+    case ExecutionTier.T3:
+      return chalk.red.bold(tier);
+    default:
+      return tier;
+  }
+}
+
+export function formatProvenanceLabel(provenance: ReviewState): string {
+  const label = provenance.replaceAll("_", " ");
+  switch (provenance) {
+    case ReviewState.OwnerReviewed:
+      return chalk.green(label);
+    case ReviewState.CommunityReviewed:
+      return chalk.cyan(label);
+    case ReviewState.Unreviewed:
+      return chalk.yellow(label);
+    case ReviewState.Generated:
+      return chalk.red.bold(label);
+    default:
+      return label;
+  }
+}
 
 export enum RiskClass {
   Safe = "Safe",
@@ -71,28 +125,11 @@ export interface EnvironmentIndex {
   };
 }
 
-export interface DependencyStatus {
-  executable: boolean;
-  required: string[];
-  missing: string[];
-}
-
 export interface TemplateMatch {
   template: TemplateEntry;
   rendered?: string;
   slotValues: Record<string, string>;
   confidence: number;
-  dependency: DependencyStatus;
-}
-
-export interface PipelineDecision {
-  tier: ExecutionTier;
-  risk: RiskClass;
-  provenance: ReviewState;
-  command?: string;
-  explanation: string;
-  missingDependencies?: string[];
-  debug: string[];
 }
 
 export interface ModelEndpointConfig {

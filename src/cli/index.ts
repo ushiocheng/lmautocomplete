@@ -10,10 +10,9 @@ import {
   getEnvironmentIndexPath,
   writeEnvironmentIndex,
 } from "../index/environmentIndex.js";
-import { runPipeline } from "../core/pipeline.js";
+import { runPipelineBlocking } from "../core/pipeline.js";
 import { printFunctionCall, setDebugEnabled } from "../core/debug.js";
-import { printBashIntegrationHint } from "../shell/bash.js";
-import { printZshIntegrationHint } from "../shell/zsh.js";
+import { printIntegrationHint } from "../shell/shellUtil.js";
 import { runConfigurator } from "./configurator.js";
 import {
   ExecutionTier,
@@ -28,57 +27,6 @@ interface ParsedArgs {
   listIntents: boolean;
   configCommand: boolean;
   prompt: string | null;
-}
-
-function formatRiskLabel(risk: RiskClass): string {
-  const label = risk.replaceAll("_", " ").toUpperCase();
-  switch (risk) {
-    case RiskClass.Safe:
-      return chalk.green(label);
-    case RiskClass.SemiSafe:
-      return chalk.cyan(label);
-    case RiskClass.Mutating:
-      return chalk.yellow(label);
-    case RiskClass.Privileged:
-      return chalk.hex("#ff8c00")(label);
-    case RiskClass.Destructive:
-      return chalk.red.bold(label);
-    case RiskClass.Unknown:
-      return chalk.redBright.bold(label);
-    default:
-      return label;
-  }
-}
-
-function formatTierLabel(tier: ExecutionTier): string {
-  switch (tier) {
-    case ExecutionTier.T0:
-      return chalk.green(tier);
-    case ExecutionTier.T1:
-      return chalk.cyan(tier);
-    case ExecutionTier.T2:
-      return chalk.yellow(tier);
-    case ExecutionTier.T3:
-      return chalk.red.bold(tier);
-    default:
-      return tier;
-  }
-}
-
-function formatProvenanceLabel(provenance: ReviewState): string {
-  const label = provenance.replaceAll("_", " ");
-  switch (provenance) {
-    case ReviewState.OwnerReviewed:
-      return chalk.green(label);
-    case ReviewState.CommunityReviewed:
-      return chalk.cyan(label);
-    case ReviewState.Unreviewed:
-      return chalk.yellow(label);
-    case ReviewState.Generated:
-      return chalk.red.bold(label);
-    default:
-      return label;
-  }
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
@@ -127,9 +75,8 @@ async function firstRunFlow(): Promise<void> {
 
     await saveConfig(config);
     console.log(chalk.green("Config saved."));
-    await seedTemplateDbIfEmpty();
-    printBashIntegrationHint();
-    printZshIntegrationHint();
+    await loadTemplates();
+    printIntegrationHint();
   } finally {
     rl.close();
   }
@@ -192,19 +139,7 @@ async function main(): Promise<void> {
     process.exitCode = 1;
     return;
   }
-
-  const decision = await runPipeline(prompt, config, {
-    dryRun: parsed.dryRun,
-  });
-
-  console.log(
-    `[${formatTierLabel(decision.tier)}] Risk: ${formatRiskLabel(decision.risk)} Provenance: ${formatProvenanceLabel(decision.provenance)}`,
-  );
-  console.log(decision.explanation);
-
-  if (decision.command) {
-    console.log(decision.command);
-  }
+  await runPipelineBlocking(prompt, config, parsed.dryRun);
 }
 
 main().catch((err: unknown) => {

@@ -6,6 +6,7 @@ import { exec } from "node:child_process";
 import { promisify } from "node:util";
 import { printFunctionCall } from "../core/debug.js";
 import type { EnvironmentIndex } from "../Interfaces/types.js";
+import { detectShell } from "../shell/shellUtil.js";
 
 const execAsync = promisify(exec);
 const INDEX_PATH = join(homedir(), ".config", "lmautocomplete", "cache","environment-index.json");
@@ -17,13 +18,6 @@ function detectPlatform(): EnvironmentIndex["os"] {
   }
   if (p === "darwin") {
     return "macos";
-  }
-  return "unknown";
-}
-
-async function detectShell(): Promise<string> {
-  if (process.env.SHELL) {
-    return process.env.SHELL.split("/").pop() ?? "unknown";
   }
   return "unknown";
 }
@@ -79,7 +73,7 @@ async function listShellBuiltins(shell: string): Promise<Set<string>> {
 
 export async function buildEnvironmentIndex(): Promise<EnvironmentIndex> {
   printFunctionCall("index.environmentIndex.buildEnvironmentIndex");
-  const shell = await detectShell();
+  const shell = detectShell();
   const executables = await listExecutablesFromPath();
   const builtins = await listShellBuiltins(shell);
   const installed = [...executables].filter((x) => !builtins.has(x)).sort();

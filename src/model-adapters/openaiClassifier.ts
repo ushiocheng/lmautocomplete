@@ -2,7 +2,7 @@ import { classifierResultSchema, classifierResultJsonSchema } from "../Interface
 import { printFunctionCall, printIfDebug } from "../core/debug.js";
 import type { ClassifierAdapter } from "./interfaces.js";
 import type { ClassifierResult, ModelEndpointConfig, NormalizedInput } from "../Interfaces/types.js";
-import { availableTemplates } from "../db/loader.js"
+import { loadTemplates } from "../db/loader.js"
 
 interface OpenAIResponse {
   choices?: Array<{
@@ -61,7 +61,7 @@ export class OpenAIClassifierAdapter implements ClassifierAdapter {
             {
               role: "system",
               content:
-                `Available Intents: ${availableTemplates.map(t => t.intent).join(", ")}`,
+                `Available Intents: ${(await loadTemplates()).map(t => t.intent).join(", ")}`,
             },
           ],
           temperature: 0,

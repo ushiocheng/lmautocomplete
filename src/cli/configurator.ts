@@ -1,12 +1,12 @@
-import { askBoolean, askNumber, askString } from "../cli/utilities.js";
+import { askBoolean, askNumber, askString, assert } from "../cli/utilities.js";
 import { stdin as input, stdout as output } from "node:process";
 import chalk from "chalk";
 import { printFunctionCall } from "../core/debug.js";
 import { getConfigPath, loadConfig, saveConfig } from "../config/store.js";
 import type { AppConfig, ModelEndpointConfig } from "../Interfaces/types.js";
 
-function toYesNo(value: boolean): string {
-  return value ? "Yes" : "No";
+function toColoredYesNo(value: boolean): string {
+  return value ? chalk.green("Yes") : chalk.red("No");
 }
 
 function maskToken(token?: string): string {
@@ -50,27 +50,24 @@ async function configureEndpoint(
   return updated;
 }
 
-// todo: Review this function
 function printConfigSummary(config: AppConfig): void {
   printFunctionCall("cli.configurator.printConfigSummary");
   console.log(chalk.bold("\nCurrent config"));
-  console.log(`1) consentGiven: ${toYesNo(config.consentGiven)}`);
-  console.log(`2) enableTier0Immediate: ${toYesNo(config.enableTier0Immediate)}`);
-  console.log(`3) uploadGeneratedTemplates: ${toYesNo(config.uploadGeneratedTemplates)}`);
-  console.log(`4) environmentIndexTtlDays: ${config.environmentIndexTtlDays}`);
+  console.log(`1) Enable Immediate Execution for Tier 0: ${toColoredYesNo(config.enableTier0Immediate)}`);
+  console.log(`2) Upload Generated Templates: ${toColoredYesNo(config.uploadGeneratedTemplates)}`);
+  console.log(`3) Environment Index TTL Days: ${config.environmentIndexTtlDays}`);
   console.log(
-    `5) classifierEndpoint: enabled=${toYesNo(config.classifierEndpoint.enabled)} baseUrl=${config.classifierEndpoint.baseUrl || "(empty)"} model=${config.classifierEndpoint.model || "(empty)"} timeoutMs=${config.classifierEndpoint.timeoutMs} apiKey=${maskToken(config.classifierEndpoint.apiKey)}`,
+    `4) Classifier Endpoint: enabled=${toColoredYesNo(config.classifierEndpoint.enabled)} baseUrl=${config.classifierEndpoint.baseUrl || "(empty)"} model=${config.classifierEndpoint.model || "(empty)"} timeoutMs=${config.classifierEndpoint.timeoutMs} apiKey=${maskToken(config.classifierEndpoint.apiKey)}`,
   );
   console.log(
-    `6) generatorEndpoint: enabled=${toYesNo(config.generatorEndpoint.enabled)} baseUrl=${config.generatorEndpoint.baseUrl || "(empty)"} model=${config.generatorEndpoint.model || "(empty)"} timeoutMs=${config.generatorEndpoint.timeoutMs} apiKey=${maskToken(config.generatorEndpoint.apiKey)}`,
+    `5) Generator Endpoint: enabled=${toColoredYesNo(config.generatorEndpoint.enabled)} baseUrl=${config.generatorEndpoint.baseUrl || "(empty)"} model=${config.generatorEndpoint.model || "(empty)"} timeoutMs=${config.generatorEndpoint.timeoutMs} apiKey=${maskToken(config.generatorEndpoint.apiKey)}`,
   );
-  console.log(`7) templateRepo: ${config.templateRepo}`);
-  console.log(`8) templateRepoRef: ${config.templateRepoRef}`);
-  console.log("9) Save and exit");
-  console.log("10) Exit without saving");
+  console.log(`6) Template Repo: ${config.templateRepo}`);
+  console.log(`7) Template Repo Ref: ${config.templateRepoRef}`);
+  console.log("8) Save and exit");
+  console.log("9) Exit without saving");
 }
 
-// todo: Review this function
 export async function runConfigurator(): Promise<void> {
   printFunctionCall("cli.configurator.runConfigurator");
   const config = await loadConfig();
@@ -78,38 +75,44 @@ export async function runConfigurator(): Promise<void> {
   let shouldSave = false;
 
   try {
-    while (true) {
+    inputLoop: while (true) {
       printConfigSummary(config);
-      const choice = (await rl.question("Choose option: ")).trim();
+      const choice = await askNumber(rl, "Choose option:", 9, 1);
+      switchChoice: switch (choice) {
+        case 1:
+          config.enableTier0Immediate = await askBoolean(rl, "Enable Immediate Execution for Tier 0: ", config.enableTier0Immediate);
+          break switchChoice;
+        case 2:
+          config.uploadGeneratedTemplates = await askBoolean(rl, "Upload Generated Templates: ", config.uploadGeneratedTemplates);
+          break switchChoice;
+        case 3:
+          config.environmentIndexTtlDays = await askNumber(
+        rl,
+        "Environment Index TTL Days",
 
-      if (choice === "1") {
-        config.consentGiven = await askBoolean(rl, "consentGiven", config.consentGiven);
-      } else if (choice === "2") {
-        config.enableTier0Immediate = await askBoolean(rl, "enableTier0Immediate", config.enableTier0Immediate);
-      } else if (choice === "3") {
-        config.uploadGeneratedTemplates = await askBoolean(rl, "uploadGeneratedTemplates", config.uploadGeneratedTemplates);
-      } else if (choice === "4") {
-        config.environmentIndexTtlDays = await askNumber(
-          rl,
-          "environmentIndexTtlDays",
-          config.environmentIndexTtlDays,
-          1,
-        );
-      } else if (choice === "5") {
-        config.classifierEndpoint = await configureEndpoint(rl, "classifierEndpoint", config.classifierEndpoint);
-      } else if (choice === "6") {
-        config.generatorEndpoint = await configureEndpoint(rl, "generatorEndpoint", config.generatorEndpoint);
-      } else if (choice === "7") {
-        config.templateRepo = await askString(rl, "templateRepo", config.templateRepo);
-      } else if (choice === "8") {
-        config.templateRepoRef = await askString(rl, "templateRepoRef", config.templateRepoRef);
-      } else if (choice === "9") {
-        shouldSave = true;
-        break;
-      } else if (choice === "10") {
-        break;
-      } else {
-        console.log(chalk.yellow("Invalid option."));
+        config.environmentIndexTtlDays,
+        1,
+          );
+          break switchChoice;
+        case 4:
+          config.classifierEndpoint = await configureEndpoint(rl, "Classifier Endpoint", config.classifierEndpoint);
+          break switchChoice;
+        case 5:
+          config.generatorEndpoint = await configureEndpoint(rl, "Generator Endpoint", config.generatorEndpoint);
+          break switchChoice;
+        case 6:
+          config.templateRepo = await askString(rl, "Template Repo", config.templateRepo);
+          break switchChoice;
+        case 7:
+          config.templateRepoRef = await askString(rl, "Template Repo Ref", config.templateRepoRef);
+          break switchChoice;
+        case 8:
+          shouldSave = true;
+          break inputLoop;
+        case 9:
+          break inputLoop;
+        default:
+          console.log(chalk.yellow("Invalid option. Try again."));
       }
     }
   } finally {

@@ -15,7 +15,7 @@ export async function askBoolean(
 export async function askNumber(
   rl: readline.Interface,
   question: string,
-  current: number, // current config value or default
+  current = 1, // current config value or default
   min = 1, // minimum acceptable value
   max = Number.MAX_SAFE_INTEGER, // maximum acceptable value
 ): Promise<number> {
@@ -50,4 +50,11 @@ export async function askString(
     return current;
   }
   return trimmed;
+}
+
+export function assert(condition: any, message?: string): asserts condition {
+  if (!condition) {
+    console.error(message || "Assertion failed");
+    process.exit(2);
+  }
 }
