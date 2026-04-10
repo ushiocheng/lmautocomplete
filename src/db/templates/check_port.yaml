@@ -1,14 +1,14 @@
 intent: check_port
 summary: Show what process is using a port
 slots:
-  - port
+    - port
 template_by_platform:
-  linux: "lsof -i :{port}"
-  macos: "lsof -i :{port}"
+    linux: "lsof -i :{port}"
+    macos: "lsof -i :{port}"
 depends_on:
-  linux:
-    - lsof
-  macos:
-    - lsof
+    linux:
+        - lsof
+    macos:
+        - lsof
 risk: Safe
 review_state: Owner_Reviewed

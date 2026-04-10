@@ -5,9 +5,9 @@ import { unknownShellIntegration } from "./fallback.js";
 import chalk from "chalk";
 
 export enum Shell {
-	Bash = "bash",
-	Zsh = "zsh",
-	Unknown = "unknown",
+    Bash = "bash",
+    Zsh = "zsh",
+    Unknown = "unknown",
 }
 
 let currentShell: Shell | null = null;
@@ -19,15 +19,15 @@ export function setDryRun(enabled: boolean): void {
 
 export function detectShell(): Shell {
     if (currentShell !== null) return currentShell;
-	const shellName = process.env.SHELL?.split("/").pop()?.toLowerCase();
-	if (shellName === "bash") {
+    const shellName = process.env.SHELL?.split("/").pop()?.toLowerCase();
+    if (shellName === "bash") {
         currentShell = Shell.Bash;
-	}else if (shellName === "zsh") {
+    } else if (shellName === "zsh") {
         currentShell = Shell.Zsh;
-	} else {
+    } else {
         currentShell = Shell.Unknown;
     }
-	return currentShell;
+    return currentShell;
 }
 
 function integrationForCurrentShell(): ShellIntegration {
