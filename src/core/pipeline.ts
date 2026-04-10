@@ -27,12 +27,8 @@ function resolvePlatform(os: string): Platform | null {
   return null;
 }
 
-async function insertOrExecute(command: string, tier: ExecutionTier, dryRun: boolean, config: AppConfig): Promise<void> {
-  printFunctionCall("core.pipeline.insertOrExecute", { command, tier, dryRun, config });
-  if (dryRun) {
-    console.log(chalk.cyan(`Dry-run: ${command}`));
-    return;
-  }
+async function insertOrExecute(command: string, tier: ExecutionTier, config: AppConfig): Promise<void> {
+  printFunctionCall("core.pipeline.insertOrExecute", { command, tier, config });
 
   if (tier === ExecutionTier.T0) {
     if (!config.enableTier0Immediate) {
@@ -51,7 +47,7 @@ async function insertOrExecute(command: string, tier: ExecutionTier, dryRun: boo
 /**
  * Completes Tier 3 flow, returns a boolean if the input is unedited & accepted for storage
  */
-async function runTier3Flow(command: string, dryRun: boolean): Promise<boolean> {
+async function runTier3Flow(command: string): Promise<boolean> {
   printFunctionCall("core.pipeline.runTier3Flow");
   console.log(chalk.red("--------------------------------------------------"));
   console.log(chalk.red(" WARNING: LLM Generated, review before proceeding"));
@@ -59,7 +55,6 @@ async function runTier3Flow(command: string, dryRun: boolean): Promise<boolean> 
   const editedCommand = editableBuffer(command);
   console.log(chalk.red("--------------------------------------------------"));
 
-  if (dryRun) return false;
   if (editedCommand !== command) {
     // User edited command, just insert it
     insertCommand(editedCommand);
@@ -87,8 +82,7 @@ async function runTier3Flow(command: string, dryRun: boolean): Promise<boolean> 
 
 export async function runPipeline(
   instruction: string,
-  config: AppConfig,
-  dryRun: boolean
+  config: AppConfig
 ): Promise<void> {
   printFunctionCall("core.pipeline.runPipeline", { instruction });
   const normalized = normalizeInput(instruction);
@@ -139,7 +133,7 @@ export async function runPipeline(
       console.log(chalk.red("Warning: Destructive command."));
     }
 
-    await insertOrExecute(rendered, tier, dryRun, config);
+    await insertOrExecute(rendered, tier, config);
     return;
   } // Implicit else, Generating command logic after this line
 
@@ -150,7 +144,7 @@ export async function runPipeline(
 
   const generator = new OpenAIGeneratorAdapter();
   const generated = await generator.generate(normalized, config.generatorEndpoint);
-  const accepted = await runTier3Flow(generated.command_preview, dryRun);
+  const accepted = await runTier3Flow(generated.command_preview);
   if (accepted) {
     if (!platform) {
       printIfDebug("core.pipeline.runPipeline", "Generated template not saved because platform is unsupported.");
@@ -171,8 +165,7 @@ export async function runPipeline(
 export async function runPipelineBlocking(
   instruction: string,
   config: AppConfig,
-  dryRun: boolean,
 ): Promise<void> {
   // Explicit sequencing boundary for callers.
-  await runPipeline(instruction, config, dryRun);
+  await runPipeline(instruction, config);
 }

@@ -2,6 +2,7 @@ import { ShellIntegration } from "./interface.js";
 import { bashIntegration } from "./bash.js";
 import { zshIntegration } from "./zsh.js";
 import { unknownShellIntegration } from "./fallback.js";
+import chalk from "chalk";
 
 export enum Shell {
 	Bash = "bash",
@@ -10,6 +11,11 @@ export enum Shell {
 }
 
 let currentShell: Shell | null = null;
+let dryRunEnabled = false;
+
+export function setDryRun(enabled: boolean): void {
+    dryRunEnabled = enabled;
+}
 
 export function detectShell(): Shell {
     if (currentShell !== null) return currentShell;
@@ -44,9 +50,17 @@ export function editableBuffer(command: string): string {
 }
 
 export function executeCommand(command: string): void {
+    if (dryRunEnabled) {
+        console.log(chalk.cyan(`Dry-run (execute): ${command}`));
+        return;
+    }
     integrationForCurrentShell().executeCommand(command);
 }
 
 export function insertCommand(command: string): void {
+    if (dryRunEnabled) {
+        console.log(chalk.cyan(`Dry-run (insert): ${command}`));
+        return;
+    }
     integrationForCurrentShell().insertCommand(command);
 }

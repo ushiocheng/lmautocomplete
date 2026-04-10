@@ -30,7 +30,7 @@ const TEST_TIMEOUT_MS = 30_000;
 
 async function runCommand(prompt: string, timeoutMs: number): Promise<RunResult> {
 	return await new Promise<RunResult>((resolve) => {
-		const child = spawn("npm", ["run", "dev", "--", "--debug", prompt], {
+		const child = spawn("npm", ["run", "dev", "--", "--debug", "--dry-run", prompt], {
 			cwd: ROOT_DIR,
 			shell: process.platform === "win32",
 			env: process.env,

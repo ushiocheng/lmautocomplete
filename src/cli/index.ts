@@ -7,7 +7,7 @@ import { loadTemplates, updateTemplates } from "../db/loader.js";
 import { askBoolean } from "../cli/utilities.js";
 import { runPipelineBlocking } from "../core/pipeline.js";
 import { printFunctionCall, setDebugEnabled } from "../core/debug.js";
-import { printIntegrationHint } from "../shell/shellUtil.js";
+import { printIntegrationHint, setDryRun } from "../shell/shellUtil.js";
 import { runConfigurator } from "./configurator.js";
 
 interface ParsedArgs {
@@ -106,6 +106,7 @@ async function main(): Promise<void> {
   await bootstrapIfNeeded();
 
   const parsed = parseArgs(process.argv.slice(2));
+  setDryRun(parsed.dryRun);
   
   if (parsed.configCommand) {
     await runConfigurator();
@@ -130,7 +131,7 @@ async function main(): Promise<void> {
     process.exitCode = 1;
     return;
   }
-  await runPipelineBlocking(prompt, config, parsed.dryRun);
+  await runPipelineBlocking(prompt, config);
 }
 
 main().catch((err: unknown) => {
