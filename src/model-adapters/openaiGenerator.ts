@@ -28,11 +28,6 @@ export class OpenAIGeneratorAdapter implements GeneratorAdapter {
             controller.abort();
         }, endpoint.timeoutMs);
 
-        console.log({
-            instruction: input.normalized,
-            quoted_tokens: input.quotedTokens,
-        }); // todo: remove debug
-
         try {
             const response = await fetch(`${endpoint.baseUrl.replace(/\/$/, "")}/chat/completions`, {
                 method: "POST",

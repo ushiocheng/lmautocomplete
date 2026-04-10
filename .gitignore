@@ -4,3 +4,5 @@ dist/
 .env
 .cache/
 tests/testlogs
+# linked to ~/.config/lmautocomplete
+userconfig
