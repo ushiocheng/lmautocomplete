@@ -52,7 +52,7 @@ export class OpenAIClassifierAdapter implements ClassifierAdapter {
                         {
                             role: "system",
                             content:
-                                "Classify user shell intent and quoted or unquoted tokens as template arguments aka slots. Return JSON only. Never return shell command.",
+                                "Understand what the user is trying to do with their shell, try to match it with one of the available intents, and detect any relevant slots aka arguments. Return JSON in the form of {\"intent\": string, \"slots\": Record<string, string>, \"confidence\": number, \"needs_fallback\": boolean}. \nRequirements: \n- Never return shell command.\n- Set fallback flag when no intent matches.\n- Quoted tokens in user input is likely to be arguments, do not modify them.\n- Try to match as much slots as reasonable.",
                         },
                         {
                             role: "user",
@@ -63,7 +63,7 @@ export class OpenAIClassifierAdapter implements ClassifierAdapter {
                         },
                         {
                             role: "system",
-                            content: `Available Intents: ${(await loadTemplates()).map((t) => t.intent).join(", ")}`,
+                            content: `Available Intents and slots: [${(await loadTemplates()).map((t) => `${t.intent}: [${Object.keys(t.slots).join(", ")}]`).join(", ")}]`,
                         },
                     ],
                     temperature: 0,
