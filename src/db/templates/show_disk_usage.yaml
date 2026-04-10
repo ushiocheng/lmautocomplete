@@ -1,0 +1,10 @@
+intent: show_disk_free
+summary: Display the free disk space on the system.
+slots: []
+template_by_platform:
+  linux: df -h /
+depends_on:
+  linux:
+    - df
+risk: Safe
+review_state: Owner_Reviewed

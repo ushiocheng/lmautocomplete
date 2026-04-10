@@ -1,0 +1,11 @@
+intent: list_processes_memory_usage
+summary: List processes consuming the most memory
+slots:
+  - count
+template_by_platform:
+  linux: ps -eo pid,comm,%mem --sort=-%mem | head -n {count}
+depends_on:
+  linux:
+    - ps
+risk: Safe
+review_state: Owner_Reviewed

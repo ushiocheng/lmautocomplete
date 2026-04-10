@@ -1,0 +1,12 @@
+intent: find_file
+summary: Search for a specific filename within a directory hierarchy.
+slots:
+  - directory
+  - filename
+template_by_platform:
+  linux: find {directory} -type f -name "{filename}" | less
+depends_on:
+  linux:
+    - find
+risk: Safe
+review_state: Owner_Reviewed

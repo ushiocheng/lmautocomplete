@@ -1,0 +1,13 @@
+intent: add_user_to_group
+summary: Add a specified user to a given system group
+slots:
+  - username
+  - groupname
+template_by_platform:
+  linux: sudo usermod -a -G {groupname} {username}
+depends_on:
+  linux:
+    - usermod
+    - sudo
+risk: Privileged
+review_state: Owner_Reviewed
