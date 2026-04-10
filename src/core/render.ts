@@ -1,6 +1,5 @@
-import readline from "node:readline/promises";
-import { stdin as input, stdout as output } from "node:process";
 import { printFunctionCall } from "./debug.js";
+import { askString } from "../cli/utilities.js";
 
 export function renderTemplate(template: string, slots: Record<string, string>): string {
     printFunctionCall("core.render.renderTemplate");
@@ -20,6 +19,17 @@ function listMissingSlots(template: string, slots: Record<string, string>): stri
     return [...found];
 }
 
+export async function editSlots(template: string, slots: Record<string, string>): Promise<Record<string, string>> {
+    const out = { ...slots };
+    listMissingSlots(template, slots).forEach((slot) => {
+        out[slot] = "";
+    });
+    for (const slot of Object.keys(out)) {
+        out[slot] = await askString(`${slot}: `, out[slot] ?? "");
+    }
+    return out;
+}
+
 export async function fillMissingSlotsIfAny(
     template: string,
     slots: Record<string, string>
@@ -32,17 +42,12 @@ export async function fillMissingSlotsIfAny(
         return slots;
     }
 
-    const rl = readline.createInterface({ input, output });
     const out = { ...slots };
-    try {
-        for (const slot of slotsToFill) {
-            const value = (await rl.question(`${slot}: `)).trim();
-            if (value) {
-                out[slot] = value;
-            }
+    for (const slot of slotsToFill) {
+        const value = await askString(`${slot}: `, out[slot] ?? "");
+        if (value) {
+            out[slot] = value;
         }
-    } finally {
-        rl.close();
     }
 
     return out;

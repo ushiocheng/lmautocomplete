@@ -26,7 +26,7 @@ const ROOT_DIR = process.cwd();
 const TEST_DIR = join(ROOT_DIR, "tests");
 const TEST_CASES_PATH = join(TEST_DIR, "testcases.jsonc");
 const LOG_DIR = join(TEST_DIR, "testlogs");
-const TEST_TIMEOUT_MS = 30_000;
+const TEST_TIMEOUT_MS = 15_000;
 
 async function runCommand(prompt: string, timeoutMs: number): Promise<RunResult> {
     return await new Promise<RunResult>((resolve) => {

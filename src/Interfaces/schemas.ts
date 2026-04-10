@@ -36,9 +36,7 @@ export const generatorResultSchema = z.object({
         template: z.string().min(1),
         depends_on: z.array(z.string()),
     }),
-    command_preview: z.string().min(1),
-    explanation: z.string().min(1),
-    confidence: z.number().min(0).max(1),
+    slotGuesses: z.record(z.string()),
 });
 
 export const generatorResultJsonSchema = {
@@ -65,11 +63,12 @@ export const generatorResultJsonSchema = {
                 required: ["intent", "summary", "slots", "template", "depends_on"],
                 additionalProperties: false,
             },
-            command_preview: { type: "string" },
-            explanation: { type: "string" },
-            confidence: { type: "number" },
+            slotGuesses: {
+                type: "object",
+                additionalProperties: { type: "string" },
+            },
         },
-        required: ["template", "command_preview", "explanation", "confidence"],
+        required: ["template", "slotGuesses"],
         additionalProperties: false,
     },
 };

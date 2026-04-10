@@ -4,7 +4,7 @@ import { stdin as input, stdout as output } from "node:process";
 import chalk from "chalk";
 import { configExists, loadConfig, saveConfig } from "../config/store.js";
 import { loadTemplates, updateTemplates } from "../db/loader.js";
-import { askBoolean } from "../cli/utilities.js";
+import { askBoolean, askQuestion, clearPromptInterface, setPromptInterface } from "../cli/utilities.js";
 import { runPipelineBlocking } from "../core/pipeline.js";
 import { printFunctionCall, setDebugEnabled } from "../core/debug.js";
 import { printIntegrationHint, setDryRun } from "../shell/shellUtil.js";
@@ -53,30 +53,21 @@ function parseArgs(argv: string[]): ParsedArgs {
 async function firstRunFlow(): Promise<void> {
     printFunctionCall("cli.index.firstRunFlow");
     const config = await loadConfig();
-    const rl = readline.createInterface({ input, output });
-    try {
-        console.log("Installation consent:");
-        console.log(
-            "Templates are packaged with the application. Some of them can run without confirmation. So you need to be sure you trust the source of these templates. You must accept to continue."
-        );
-        const consent = await askBoolean(rl, "Trust this repo / template source?", true);
-        if (!consent) process.exit(3);
+    console.log("Installation consent:");
+    console.log(
+        "Templates are packaged with the application. Some of them can run without confirmation. So you need to be sure you trust the source of these templates. You must accept to continue."
+    );
+    const consent = await askBoolean("Trust this repo / template source?", true);
+    if (!consent) process.exit(3);
 
-        config.enableTier0Immediate = await askBoolean(
-            rl,
-            "Enable immediate execution for safer commands (Tier-0)?",
-            true
-        );
+    config.enableTier0Immediate = await askBoolean("Enable immediate execution for safer commands (Tier-0)?", true);
 
-        config.uploadGeneratedTemplates = await askBoolean(rl, "Upload generated templates/edits?", false);
+    config.uploadGeneratedTemplates = await askBoolean("Upload generated templates/edits?", false);
 
-        await saveConfig(config);
-        console.log(chalk.green("Config saved."));
-        await loadTemplates();
-        printIntegrationHint();
-    } finally {
-        rl.close();
-    }
+    await saveConfig(config);
+    console.log(chalk.green("Config saved."));
+    await loadTemplates();
+    printIntegrationHint();
 }
 
 async function bootstrapIfNeeded(): Promise<void> {
@@ -89,12 +80,7 @@ async function bootstrapIfNeeded(): Promise<void> {
 }
 
 async function readPromptInteractive(): Promise<string> {
-    const rl = readline.createInterface({ input, output });
-    try {
-        return (await rl.question("> ")).trim();
-    } finally {
-        rl.close();
-    }
+    return (await askQuestion("> ")).trim();
 }
 
 async function listIntents(): Promise<void> {
@@ -109,35 +95,42 @@ async function main(): Promise<void> {
     printFunctionCall("cli.index.main");
     setDebugEnabled(process.argv.includes("--debug"));
 
-    await bootstrapIfNeeded();
+    const rl = readline.createInterface({ input, output });
+    setPromptInterface(rl);
+    try {
+        await bootstrapIfNeeded();
 
-    const parsed = parseArgs(process.argv.slice(2));
-    setDryRun(parsed.dryRun);
+        const parsed = parseArgs(process.argv.slice(2));
+        setDryRun(parsed.dryRun);
 
-    if (parsed.configCommand) {
-        await runConfigurator();
-        return;
+        if (parsed.configCommand) {
+            await runConfigurator();
+            return;
+        }
+
+        if (parsed.update) {
+            await updateTemplates();
+            return;
+        }
+
+        if (parsed.listIntents) {
+            await listIntents();
+            return;
+        }
+
+        const config = await loadConfig();
+
+        const prompt = parsed.prompt ?? (await readPromptInteractive());
+        if (!prompt) {
+            console.error("No instruction provided.");
+            process.exitCode = 1;
+            return;
+        }
+        await runPipelineBlocking(prompt, config);
+    } finally {
+        clearPromptInterface();
+        rl.close();
     }
-
-    if (parsed.update) {
-        await updateTemplates();
-        return;
-    }
-
-    if (parsed.listIntents) {
-        await listIntents();
-        return;
-    }
-
-    const config = await loadConfig();
-
-    const prompt = parsed.prompt ?? (await readPromptInteractive());
-    if (!prompt) {
-        console.error("No instruction provided.");
-        process.exitCode = 1;
-        return;
-    }
-    await runPipelineBlocking(prompt, config);
 }
 
 main().catch((err: unknown) => {

@@ -28,6 +28,11 @@ export class OpenAIGeneratorAdapter implements GeneratorAdapter {
             controller.abort();
         }, endpoint.timeoutMs);
 
+        console.log({
+            instruction: input.normalized,
+            quoted_tokens: input.quotedTokens,
+        }); // todo: remove debug
+
         try {
             const response = await fetch(`${endpoint.baseUrl.replace(/\/$/, "")}/chat/completions`, {
                 method: "POST",
@@ -46,14 +51,11 @@ export class OpenAIGeneratorAdapter implements GeneratorAdapter {
                         {
                             role: "system",
                             content:
-                                "Propose a shell template draft for the task. Return JSON only with shape {template:{intent:string,summary:string,slots:string[],template:string,depends_on:string[]},command_preview:string,explanation:string,confidence:number}. command_preview should be a concrete command for display. template should use {slot} placeholders when relevant. Do not include markdown.",
+                                "Propose a generalized shell command template for the task. Return JSON only with shape {template:{intent:string,summary:string,slots:string[],template:string,depends_on:string[]},slotGuesses:Record<string, string>}.\nRequirements: \n- The command template should use {slot} placeholders.\n- Provide guesses for the value of each slot based on the user instruction and put them in slotGuesses as a KV map.\n- Any executables referenced should be named in depends_on.\n- Do not include markdown. Be concise whenever possible.",
                         },
                         {
                             role: "user",
-                            content: JSON.stringify({
-                                instruction: input.normalized,
-                                quoted_tokens: input.quotedTokens,
-                            }),
+                            content: `Instruction: ${input.raw}`,
                         },
                     ],
                     temperature: 0.2,

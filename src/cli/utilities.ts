@@ -1,12 +1,35 @@
 import readline from "node:readline/promises";
 import chalk from "chalk";
 
+let promptInterface: readline.Interface | null = null;
+
+export function setPromptInterface(rl: readline.Interface): void {
+    promptInterface = rl;
+}
+
+export function clearPromptInterface(): void {
+    promptInterface = null;
+}
+
+function getPromptInterface(rl?: readline.Interface): readline.Interface {
+    const active = rl ?? promptInterface;
+    if (!active) {
+        throw new Error("Prompt interface is not initialized.");
+    }
+    return active;
+}
+
+export async function askQuestion(question: string): Promise<string> {
+    const prompt = getPromptInterface();
+    return prompt.question(question);
+}
+
 export async function askBoolean(
-    rl: readline.Interface,
     question: string,
     current: boolean // current config value or default
 ): Promise<boolean> {
-    const answer = (await rl.question(`${question} [${current ? "Y/n" : "y/N"}] `)).trim().toLowerCase();
+    const prompt = getPromptInterface();
+    const answer = (await prompt.question(`${question} [${current ? "Y/n" : "y/N"}] `)).trim().toLowerCase();
     if (!answer) {
         return current;
     }
@@ -14,13 +37,13 @@ export async function askBoolean(
 }
 
 export async function askNumber(
-    rl: readline.Interface,
     question: string,
     current = 1, // current config value or default
     min = 1, // minimum acceptable value
     max = Number.MAX_SAFE_INTEGER // maximum acceptable value
 ): Promise<number> {
-    const answer = (await rl.question(`${question} (${current}): `)).trim();
+    const prompt = getPromptInterface();
+    const answer = (await prompt.question(`${question} (${current}): `)).trim();
     if (!answer) {
         return current;
     }
@@ -34,18 +57,17 @@ export async function askNumber(
 
 /**
  * Ask the user for a string input.
- * @param rl Readline interface
  * @param question Question to ask the user
  * @param current Current config value or default
  * @returns The user's input or the current value if input is empty
  * @remark Answer will be trimmed of leading and trailing whitespace.
  */
 export async function askString(
-    rl: readline.Interface,
     question: string,
     current: string // current config value or default
 ): Promise<string> {
-    const answer = await rl.question(`${question} (${current || "empty"}): `);
+    const prompt = getPromptInterface();
+    const answer = await prompt.question(`${question} (${current || "empty"}): `);
     const trimmed = answer.trim();
     if (!trimmed) {
         return current;

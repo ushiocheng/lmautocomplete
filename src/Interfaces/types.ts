@@ -109,9 +109,7 @@ export interface ClassifierResult {
 
 export interface GeneratorResult {
     template: GeneratedTemplateDraft;
-    command_preview: string;
-    explanation: string;
-    confidence: number;
+    slotGuesses: Record<string, string>;
 }
 
 export interface EnvironmentIndex {

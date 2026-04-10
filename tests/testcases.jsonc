@@ -2,21 +2,26 @@
     {
         "name": "what-can-you-do",
         "prompt": "What can you do",
-        "shouldError": true
+        "shouldError": true,
     },
     {
         "name": "ping-google",
-        "prompt": "Ping Google.com",
-        "shouldError": false
+        "prompt": "Ping 'Google.com'",
+        "shouldError": false,
+    },
+    {
+        "name": "ping-cf",
+        "prompt": "Ping 1.1.1.1",
+        "shouldError": false,
     },
     {
         "name": "check-port-22",
         "prompt": "Check if port 22 is open",
-        "shouldError": false
+        "shouldError": false,
     },
     {
         "name": "check-port-8080",
         "prompt": "Who is using port 8080?",
-        "shouldError": false
-    }
+        "shouldError": false,
+    },
 ]

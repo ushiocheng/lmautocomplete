@@ -1,8 +1,6 @@
-import readline from "node:readline/promises";
-import { stdin as input, stdout as output } from "node:process";
 import chalk from "chalk";
 import { printFunctionCall, printIfDebug } from "./debug.js";
-import { fillMissingSlotsIfAny, renderTemplate } from "./render.js";
+import { editSlots, fillMissingSlotsIfAny, renderTemplate } from "./render.js";
 import { resolveExecutionTier } from "./trust.js";
 import { normalizeInput } from "./normalize.js";
 import { findTemplatesByIntent, saveGeneratedTemplate } from "../db/loader.js";
@@ -16,6 +14,7 @@ import {
     formatProvenanceLabel,
     type AppConfig,
     type Platform,
+    GeneratorResult,
 } from "../Interfaces/types.js";
 import { OpenAIClassifierAdapter } from "../model-adapters/openaiClassifier.js";
 import { OpenAIGeneratorAdapter } from "../model-adapters/openaiGenerator.js";
@@ -51,37 +50,36 @@ async function insertOrExecute(command: string, tier: ExecutionTier, config: App
 /**
  * Completes Tier 3 flow, returns a boolean if the input is unedited & accepted for storage
  */
-async function runTier3Flow(command: string): Promise<boolean> {
+async function runTier3Flow(generated: GeneratorResult): Promise<boolean> {
     printFunctionCall("core.pipeline.runTier3Flow");
     console.log(chalk.red("--------------------------------------------------"));
     console.log(chalk.red(" WARNING: LLM Generated, review before proceeding"));
     console.log(chalk.red("--------------------------------------------------"));
-    const editedCommand = editableBuffer(command);
+
+    // Show explanation and preview
+    console.log(renderTemplate(generated.template.template, {}));
+    console.log(`\nExplanation: ${generated.template.intent}: ${generated.template.summary}`);
+    const preview = renderTemplate(generated.template.template, generated.slotGuesses);
+    console.log(`\nPreview:\n${preview}`);
     console.log(chalk.red("--------------------------------------------------"));
 
-    if (editedCommand !== command) {
-        // User edited command, just insert it
-        insertCommand(editedCommand);
-        return false;
-    }
-
-    const rl = readline.createInterface({ input, output });
-    try {
-        const accept = await askBoolean(rl, "Accept Generated Command?", false);
-        if (accept) {
-            console.log(chalk.blue(`Inserting: ${command}`));
-            insertCommand(command);
+    const accept = await askBoolean("Accept Generated Template?", false);
+    if (accept) {
+        const editedSlots = await editSlots(generated.template.template, generated.slotGuesses);
+        const final = renderTemplate(generated.template.template, editedSlots);
+        console.log(chalk.blue(`>> ${final}`));
+        const proceed = await askBoolean("Proceed with this command?", false);
+        if (proceed) {
+            insertCommand(final);
             return true;
         }
-
-        // const revise = await askBoolean(rl,"Revise Prompt?",false);
-        // if (revise) {
-        //   console.log(chalk.gray("Prompt revision flow not implemented yet in v1 scaffold."));
-        // }
-        return false;
-    } finally {
-        rl.close();
     }
+
+    // const revise = await askBoolean(rl,"Revise Prompt?",false);
+    // if (revise) {
+    //   console.log(chalk.gray("Prompt revision flow not implemented yet in v1 scaffold."));
+    // }
+    return false;
 }
 
 export async function runPipeline(instruction: string, config: AppConfig): Promise<void> {
@@ -98,6 +96,8 @@ export async function runPipeline(instruction: string, config: AppConfig): Promi
     const env = await getEnvironmentIndex(config.environmentIndexTtlDays);
     const platform = resolvePlatform(env.os);
     let generateCommand = false;
+
+    if (classifierResult.confidence < 0.8) generateCommand = true;
 
     const template = classifierResult.intent ? await findTemplatesByIntent(classifierResult.intent) : null;
 
@@ -151,7 +151,7 @@ export async function runPipeline(instruction: string, config: AppConfig): Promi
 
     const generator = new OpenAIGeneratorAdapter();
     const generated = await generator.generate(normalized, config.generatorEndpoint);
-    const accepted = await runTier3Flow(generated.command_preview);
+    const accepted = await runTier3Flow(generated);
     if (accepted) {
         if (!platform) {
             printIfDebug("core.pipeline.runPipeline", "Generated template not saved because platform is unsupported.");
