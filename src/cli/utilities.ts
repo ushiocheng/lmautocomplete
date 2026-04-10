@@ -2,6 +2,7 @@ import readline from "node:readline/promises";
 import chalk from "chalk";
 
 let promptInterface: readline.Interface | null = null;
+let testModeEnabled = false;
 
 export function setPromptInterface(rl: readline.Interface): void {
     promptInterface = rl;
@@ -9,6 +10,14 @@ export function setPromptInterface(rl: readline.Interface): void {
 
 export function clearPromptInterface(): void {
     promptInterface = null;
+}
+
+export function setTestMode(enabled: boolean): void {
+    testModeEnabled = enabled;
+}
+
+export function isTestMode(): boolean {
+    return testModeEnabled;
 }
 
 function getPromptInterface(rl?: readline.Interface): readline.Interface {
@@ -20,6 +29,9 @@ function getPromptInterface(rl?: readline.Interface): readline.Interface {
 }
 
 export async function askQuestion(question: string): Promise<string> {
+    if (testModeEnabled) {
+        return "";
+    }
     const prompt = getPromptInterface();
     return prompt.question(question);
 }
@@ -28,6 +40,9 @@ export async function askBoolean(
     question: string,
     current: boolean // current config value or default
 ): Promise<boolean> {
+    if (testModeEnabled) {
+        return true;
+    }
     const prompt = getPromptInterface();
     const answer = (await prompt.question(`${question} [${current ? "Y/n" : "y/N"}] `)).trim().toLowerCase();
     if (!answer) {
@@ -42,6 +57,9 @@ export async function askNumber(
     min = 1, // minimum acceptable value
     max = Number.MAX_SAFE_INTEGER // maximum acceptable value
 ): Promise<number> {
+    if (testModeEnabled) {
+        return current;
+    }
     const prompt = getPromptInterface();
     const answer = (await prompt.question(`${question} (${current}): `)).trim();
     if (!answer) {
@@ -66,6 +84,9 @@ export async function askString(
     question: string,
     current: string // current config value or default
 ): Promise<string> {
+    if (testModeEnabled) {
+        return current;
+    }
     const prompt = getPromptInterface();
     const answer = await prompt.question(`${question} (${current || "empty"}): `);
     const trimmed = answer.trim();

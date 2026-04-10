@@ -4,7 +4,7 @@ import { stdin as input, stdout as output } from "node:process";
 import chalk from "chalk";
 import { configExists, loadConfig, saveConfig } from "../config/store.js";
 import { loadTemplates, updateTemplates } from "../db/loader.js";
-import { askBoolean, askQuestion, clearPromptInterface, setPromptInterface } from "../cli/utilities.js";
+import { askBoolean, askQuestion, clearPromptInterface, setPromptInterface, setTestMode } from "../cli/utilities.js";
 import { runPipelineBlocking } from "../core/pipeline.js";
 import { printFunctionCall, setDebugEnabled } from "../core/debug.js";
 import { printIntegrationHint, setDryRun } from "../shell/shellUtil.js";
@@ -12,6 +12,7 @@ import { runConfigurator } from "./configurator.js";
 
 interface ParsedArgs {
     dryRun: boolean;
+    testMode: boolean;
     debug: boolean;
     update: boolean;
     listIntents: boolean;
@@ -24,6 +25,7 @@ function parseArgs(argv: string[]): ParsedArgs {
     const args = [...argv];
     const parsed: ParsedArgs = {
         dryRun: false,
+        testMode: false,
         debug: false,
         update: false,
         listIntents: false,
@@ -34,6 +36,8 @@ function parseArgs(argv: string[]): ParsedArgs {
     for (const arg of args) {
         if (arg === "--dry-run") {
             parsed.dryRun = true;
+        } else if (arg === "--test-mode") {
+            parsed.testMode = true;
         } else if (arg === "--debug") {
             parsed.debug = true;
         } else if (arg === "update") {
@@ -102,6 +106,7 @@ async function main(): Promise<void> {
 
         const parsed = parseArgs(process.argv.slice(2));
         setDryRun(parsed.dryRun);
+        setTestMode(parsed.dryRun && parsed.testMode);
 
         if (parsed.configCommand) {
             await runConfigurator();

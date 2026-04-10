@@ -86,7 +86,7 @@ async function prepareLogDirectory(logDir: string): Promise<void> {
 
 async function runCommand(prompt: string, config: RunnerConfig): Promise<RunResult> {
     return await new Promise<RunResult>((resolve) => {
-        const child = spawn("npm", ["run", "dev", "--", "--debug", "--dry-run", prompt], {
+        const child = spawn("npm", ["run", "dev", "--", "--test-mode", "--debug", "--dry-run", prompt], {
             cwd: config.rootDir,
             shell: process.platform === "win32",
             env: process.env,
