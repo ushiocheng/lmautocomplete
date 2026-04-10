@@ -13,5 +13,10 @@
         "name": "check-port-22",
         "prompt": "Check if port 22 is open",
         "shouldError": false
+    },
+    {
+        "name": "check-port-8080",
+        "prompt": "Who is using port 8080?",
+        "shouldError": false
     }
 ]

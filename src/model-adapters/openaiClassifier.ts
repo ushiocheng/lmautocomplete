@@ -85,11 +85,17 @@ export class OpenAIClassifierAdapter implements ClassifierAdapter {
             }
 
             const payload = (await response.json()) as OpenAIResponse;
-            printIfDebug("modelAdapters.openaiClassifier", "response received", payload);
-            const content = payload.choices?.[0]?.message?.content ?? "{}";
-            const parsed = JSON.parse(content);
-            printIfDebug("modelAdapters.openaiClassifier", "response content", parsed);
-            return classifierResultSchema.parse(parsed);
+            try {
+                const content = payload.choices?.[0]?.message?.content ?? "{}";
+                const parsed = JSON.parse(content);
+                printIfDebug("modelAdapters.openaiClassifier", "response content", parsed);
+                return classifierResultSchema.parse(parsed);
+            } catch (err) {
+                console.error("[ERROR] Error parsing classifier response:", err);
+                // Only print full packet if parsing failed
+                printIfDebug("modelAdapters.openaiClassifier", "response received", payload);
+                throw err;
+            }
         } catch {
             return {
                 intent: null,

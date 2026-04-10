@@ -31,7 +31,7 @@ async function insertOrExecute(command: string, tier: ExecutionTier, config: App
     printFunctionCall("core.pipeline.insertOrExecute", {
         command,
         tier,
-        config,
+        enableTier0Immediate: config.enableTier0Immediate,
     });
 
     if (tier === ExecutionTier.T0) {

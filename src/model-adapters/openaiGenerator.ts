@@ -70,11 +70,17 @@ export class OpenAIGeneratorAdapter implements GeneratorAdapter {
             }
 
             const payload = (await response.json()) as OpenAIResponse;
-            printIfDebug("modelAdapters.openaiGenerator", "response received", payload);
-            const content = payload.choices?.[0]?.message?.content ?? "{}";
-            const parsed = JSON.parse(content);
-            printIfDebug("modelAdapters.openaiGenerator", "response content", parsed);
-            return generatorResultSchema.parse(parsed);
+            try {
+                const content = payload.choices?.[0]?.message?.content ?? "{}";
+                const parsed = JSON.parse(content);
+                printIfDebug("modelAdapters.openaiGenerator", "response content", parsed);
+                return generatorResultSchema.parse(parsed);
+            } catch (err) {
+                console.error("[ERROR] Error parsing generator response:", err);
+                // Only print full packet if parsing failed
+                printIfDebug("modelAdapters.openaiGenerator", "response received", payload);
+                throw err;
+            }
         } finally {
             clearTimeout(timeout);
         }

@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { homedir } from "node:os";
 import yaml from "js-yaml";
 import { templateEntrySchema } from "../Interfaces/schemas.js";
-import { printFunctionCall } from "../core/debug.js";
+import { printFunctionCall, printIfDebug } from "../core/debug.js";
 import type { GeneratedTemplateDraft, Platform, TemplateEntry } from "../Interfaces/types.js";
 import { ReviewState, RiskClass } from "../Interfaces/types.js";
 import { copyFile } from "node:fs/promises";
@@ -43,12 +43,12 @@ async function listTemplateFiles(dir: string): Promise<string[]> {
 }
 
 async function seedTemplateDbIfEmpty(): Promise<void> {
-    printFunctionCall("db.loader.seedTemplateDbIfEmpty");
     await mkdir(TEMPLATE_DIR, { recursive: true });
     const existing = await listTemplateFiles(TEMPLATE_DIR);
     if (existing.length > 0) {
         return;
     }
+    printIfDebug("db.loader.seedTemplateDbIfEmpty", "Seeding template database with bundled templates");
 
     const bundled = await listTemplateFiles(DEV_TEMPLATE_DIR);
     for (const file of bundled) {
