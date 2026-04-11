@@ -2,7 +2,7 @@ import chalk from "chalk";
 import { printFunctionCall } from "../core/debug.js";
 import { ShellIntegration } from "./interface.js";
 
-export class zshIntegration implements ShellIntegration {
+export class ZshIntegration implements ShellIntegration {
     printIntegrationHint(): void {
         printFunctionCall("shell.zsh.printZshIntegrationHint");
         console.log("Zsh integration hint:");

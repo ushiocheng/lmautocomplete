@@ -40,14 +40,18 @@ function parseArgs(argv: string[]): ParsedArgs {
             parsed.testMode = true;
         } else if (arg === "--debug") {
             parsed.debug = true;
-        } else if (arg === "update") {
+        } else if (arg === "--update") {
             parsed.update = true;
         } else if (arg === "--list-intents") {
             parsed.listIntents = true;
-        } else if (arg === "config") {
+        } else if (arg === "--config") {
             parsed.configCommand = true;
-        } else if (!arg.startsWith("-") && parsed.prompt === null) {
-            parsed.prompt = arg;
+        } else if (!arg.startsWith("-")) {
+            if (parsed.prompt === null) {
+                parsed.prompt = arg;
+            } else {
+                parsed.prompt += " " + arg;
+            }
         }
     }
 

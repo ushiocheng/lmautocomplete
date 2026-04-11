@@ -41,7 +41,7 @@
             "runtimeExecutable": "node",
             "runtimeArgs": ["--import", "tsx"],
             "program": "${workspaceFolder}/src/cli/index.ts",
-            "args": ["config"],
+            "args": ["--config"],
             "env": {
                 "FORCE_COLOR": "1"
             },

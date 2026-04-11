@@ -2,7 +2,7 @@ import chalk from "chalk";
 import { printFunctionCall } from "../core/debug.js";
 import { ShellIntegration } from "./interface.js";
 
-export class bashIntegration implements ShellIntegration {
+export class BashIntegration implements ShellIntegration {
     printIntegrationHint(): void {
         printFunctionCall("shell.bash.printBashIntegrationHint");
         console.log("Bash integration hint:");

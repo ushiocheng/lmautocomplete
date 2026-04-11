@@ -141,12 +141,13 @@ export async function runPipeline(instruction: string, config: AppConfig): Promi
     } // Implicit else, Generating command logic after this line
 
     if (!config.generatorEndpoint.enabled) {
+        const msg = "No trusted template matched and generation endpoint is not configured. Configure generator endpoint to enable Tier-3 suggestions.";
         console.log(
             chalk.yellow(
-                "No trusted template matched and generation endpoint is not configured. Configure generator endpoint to enable Tier-3 suggestions."
+                msg
             )
         );
-        return;
+        throw new Error(msg);
     }
 
     const generator = new OpenAIGeneratorAdapter();
@@ -155,8 +156,8 @@ export async function runPipeline(instruction: string, config: AppConfig): Promi
     if (accepted) {
         if (!platform) {
             printIfDebug("core.pipeline.runPipeline", "Generated template not saved because platform is unsupported.");
+            return;
         }
-        assert(platform);
         const savedPath = await saveGeneratedTemplate(platform, generated.template);
         printIfDebug(
             "core.pipeline.runPipeline",

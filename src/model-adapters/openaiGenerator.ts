@@ -58,7 +58,7 @@ export class OpenAIGeneratorAdapter implements GeneratorAdapter {
                 }),
             });
 
-            if (!(await response).ok) {
+            if (!response.ok) {
                 printIfDebug(
                     "modelAdapters.openaiGenerator",
                     `response not ok: ${response.status} ${response.statusText}`

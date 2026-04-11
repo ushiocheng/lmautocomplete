@@ -1,7 +1,7 @@
 import { ShellIntegration } from "./interface.js";
-import { bashIntegration } from "./bash.js";
-import { zshIntegration } from "./zsh.js";
-import { unknownShellIntegration } from "./fallback.js";
+import { BashIntegration } from "./bash.js";
+import { ZshIntegration } from "./zsh.js";
+import { UnknownShellIntegration } from "./fallback.js";
 import chalk from "chalk";
 
 export enum Shell {
@@ -11,6 +11,7 @@ export enum Shell {
 }
 
 let currentShell: Shell | null = null;
+let integrationForCurrentShellSingleton: ShellIntegration | null = null;
 let dryRunEnabled = false;
 
 export function setDryRun(enabled: boolean): void {
@@ -31,14 +32,19 @@ export function detectShell(): Shell {
 }
 
 function integrationForCurrentShell(): ShellIntegration {
+    if (integrationForCurrentShellSingleton !== null) return integrationForCurrentShellSingleton;
     switch (detectShell()) {
         case Shell.Bash:
-            return new bashIntegration();
+            integrationForCurrentShellSingleton = new BashIntegration();
+            break;
         case Shell.Zsh:
-            return new zshIntegration();
+            integrationForCurrentShellSingleton = new ZshIntegration();
+            break;
         default:
-            return new unknownShellIntegration();
+            integrationForCurrentShellSingleton = new UnknownShellIntegration();
+            break;
     }
+    return integrationForCurrentShellSingleton;
 }
 
 export function printIntegrationHint(): void {

@@ -1,8 +1,8 @@
-import { access, mkdir, readFile, writeFile } from "node:fs/promises";
-import { constants, existsSync } from "node:fs";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
-import { printFunctionCall, printIfDebug } from "../core/debug.js";
+import { printFunctionCall } from "../core/debug.js";
 import type { AppConfig } from "../Interfaces/types.js";
 import chalk from "chalk";
 

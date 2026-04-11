@@ -215,12 +215,12 @@
         "shouldError": false
     },
     {
-        "name": "agt-find-files-named-\"test file.txt\"",
+        "name": "agt-find-files-named-test-file.txt",
         "prompt": "find files named \"test file.txt\"",
         "shouldError": false
     },
     {
-        "name": "agt-search-for-\"error 500\" in logs",
+        "name": "agt-search-for-error-500-in-logs",
         "prompt": "search for \"error 500\" in logs",
         "shouldError": false
     },

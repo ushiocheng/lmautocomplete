@@ -1,5 +1,4 @@
 import { ExecutionTier, ReviewState, RiskClass } from "../Interfaces/types.js";
-import { printFunctionCall } from "./debug.js";
 
 export function resolveExecutionTier(risk: RiskClass, provenance: ReviewState): ExecutionTier {
     if (provenance === ReviewState.Generated) {

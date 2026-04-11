@@ -71,7 +71,7 @@ export class OpenAIClassifierAdapter implements ClassifierAdapter {
                 }),
             });
 
-            if (!(await response).ok) {
+            if (!response.ok) {
                 printIfDebug(
                     "modelAdapters.openaiClassifier",
                     `response not ok: ${response.status} ${response.statusText}`
