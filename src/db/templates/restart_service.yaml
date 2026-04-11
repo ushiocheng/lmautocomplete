@@ -1,0 +1,12 @@
+intent: restart_service
+summary: Restarts the specified systemd service.
+slots:
+  - service_name
+template_by_platform:
+  linux: sudo systemctl restart {service_name}
+depends_on:
+  linux:
+    - systemctl
+    - sudo
+risk: Privileged
+review_state: Owner_Reviewed

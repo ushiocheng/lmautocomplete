@@ -1,0 +1,12 @@
+intent: extract_tar_archive
+summary: Extracts the contents of a .tar.gz archive.
+slots:
+  - archive_path
+  - destination
+template_by_platform:
+  linux: mkdir -p {destination} && tar -xzvf {archive_path} -C {destination}
+depends_on:
+  linux:
+    - tar
+risk: Semi_Safe
+review_state: Owner_Reviewed

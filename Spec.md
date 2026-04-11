@@ -49,27 +49,27 @@ Revise Prompt? [Y/n]
 
 The system should be:
 
-* fast for common tasks
-* deterministic when possible
-* auditable
-* explicit about provenance
-* safe against trust creep
+- fast for common tasks
+- deterministic when possible
+- auditable
+- explicit about provenance
+- safe against trust creep
 
 ## 2. Non-goals
 
 This tool is **not**:
 
-* a general shell agent
-* a background autonomous executor
-* a chatbot
-* a replacement for shell knowledge
-* a system that silently learns from users
+- a general shell agent
+- a background autonomous executor
+- a chatbot
+- a replacement for shell knowledge
+- a system that silently learns from users
 
 It should never:
 
-* mutate trust state automatically
-* execute untrusted synthesis without user friction
-* pretend reviewed and generated commands are equivalent
+- mutate trust state automatically
+- execute untrusted synthesis without user friction
+- pretend reviewed and generated commands are equivalent
 
 ---
 
@@ -108,14 +108,14 @@ On installation, user need to consent to the following
 Risk is classified ON THE ASSUMPTION that user is trusted and do not enter malformed string into fields.
 
 - **Safe**: commands that can't
-  - Change anything (read-only)
-  - Make network requests
-  - Produce large amount of input
-  - Hang the Shell
-  - Can't be set when PR or updating DB, an explicit commit audit is required
+    - Change anything (read-only)
+    - Make network requests
+    - Produce large amount of input
+    - Hang the Shell
+    - Can't be set when PR or updating DB, an explicit commit audit is required
 - **Semi-Safe**: Commands that can't modify local file, which includes
-  - curl: Which may have external side effect but is locally safe
-  - find: May hang the shell or outputs large amount of text
+    - curl: Which may have external side effect but is locally safe
+    - find: May hang the shell or outputs large amount of text
 - **Mutating**: Commands that modify local environment
 - **Privileged**: Any commands that includes a sudo
 - **Destructive**: Commands that may harm the OS irrecolovably
@@ -140,9 +140,9 @@ There are **4 trust tiers** for runtime policy.
 
 UX:
 
-* command is shown briefly
-* executes immediately
-* no confirmation
+- command is shown briefly
+- executes immediately
+- no confirmation
 
 Requirements:
 
@@ -153,8 +153,8 @@ Requirements:
 
 UX:
 
-* inserted into shell line buffer
-* one Enter runs it
+- inserted into shell line buffer
+- one Enter runs it
 
 Requirements:
 
@@ -167,12 +167,12 @@ Largest class, Gives warnings before executing
 
 UX:
 
-* yellow warning: This command is not audited
-* Additional warning for
-  * red warn IF Risk class is Destructive
-  * orange warn IF Provenance is Unreviewed or below
-* inserted into shell line buffer
-* one Enter runs it
+- yellow warning: This command is not audited
+- Additional warning for
+    - red warn IF Risk class is Destructive
+    - orange warn IF Provenance is Unreviewed or below
+- inserted into shell line buffer
+- one Enter runs it
 
 Requirements:
 
@@ -183,9 +183,9 @@ Requirements:
 
 UX:
 
-* red warning
-* shown in editable buffer before insertion
-* Multiple confirmation needed
+- red warning
+- shown in editable buffer before insertion
+- Multiple confirmation needed
 
 As an example
 
@@ -239,31 +239,31 @@ Else:
 
 Handles:
 
-* hotkey / alias / widget
-* prompt buffer insertion
-* edit mode
-* Enter gating
-* warnings / color
+- hotkey / alias / widget
+- prompt buffer insertion
+- edit mode
+- Enter gating
+- warnings / color
 
 ### 5.2B. Input normalizer
 
 Normalizes user instruction:
 
-* trim spaces
-* lowercase for matching
-* preserve quoted tokens
-* extract numbers, usernames, ports, service names
+- trim spaces
+- lowercase for matching
+- preserve quoted tokens
+- extract numbers, usernames, ports, service names
 
 ### 5.2C. Heuristics layer
 
 Fast regex/pattern rules for obvious intents:
 
-* `port 8080`
-* `docker group`
-* `what uses port`
-* `who is listening on`
-* `which process`
-* `restart service X`
+- `port 8080`
+- `docker group`
+- `what uses port`
+- `who is listening on`
+- `which process`
+- `restart service X`
 
 This avoids model invocation for trival cases.
 
@@ -271,10 +271,10 @@ This avoids model invocation for trival cases.
 
 Purpose:
 
-* classify intent
-* extract slots (if specified)
-* assign confidence
-* never emit shell directly in normal path
+- classify intent
+- extract slots (if specified)
+- assign confidence
+- never emit shell directly in normal path
 
 Output schema should be structured.
 
@@ -282,13 +282,13 @@ Output schema should be structured.
 
 Contains:
 
-* intents
-* aliases/examples
-* slot definitions
-* per-platform templates
-* trust metadata
-* risk metadata
-* validation rules
+- intents
+- aliases/examples
+- slot definitions
+- per-platform templates
+- trust metadata
+- risk metadata
+- validation rules
 
 ### 5.2F. Fallback model
 
@@ -296,10 +296,10 @@ Larger model used when no template matches, confidence too low, or command unava
 
 Should receive:
 
-* normalized instruction
-* OS/shell info
-* compact command availability context
-* strict output schema
+- normalized instruction
+- OS/shell info
+- compact command availability context
+- strict output schema
 
 ### 5.2G. Index Management
 
@@ -335,9 +335,9 @@ a "check port 8080"
 
 Example:
 
-* press `Alt-a`
-* mini prompt appears
-* result lands in current command line
+- press `Alt-a`
+- mini prompt appears
+- result lands in current command line
 
 This is probably the best final UX.
 
@@ -395,12 +395,12 @@ The small model should emit JSON only:
 
 ```json
 {
-  "intent": "check_port",
-  "slots": {
-    "port": "8080"
-  },
-  "confidence": 0.94,
-  "needs_fallback": false
+    "intent": "check_port",
+    "slots": {
+        "port": "8080"
+    },
+    "confidence": 0.94,
+    "needs_fallback": false
 }
 ```
 
@@ -408,10 +408,10 @@ If ambiguous:
 
 ```json
 {
-  "intent": null,
-  "slots": {},
-  "confidence": 0.31,
-  "needs_fallback": true
+    "intent": null,
+    "slots": {},
+    "confidence": 0.31,
+    "needs_fallback": true
 }
 ```
 
@@ -423,9 +423,9 @@ Fallback model may emit structured shell proposal:
 
 ```json
 {
-  "command": "lsof -i :8080",
-  "explanation": "Show process using TCP/UDP port 8080.",
-  "confidence": 0.76
+    "command": "lsof -i :8080",
+    "explanation": "Show process using TCP/UDP port 8080.",
+    "confidence": 0.76
 }
 ```
 
@@ -433,9 +433,9 @@ For state-changing commands:
 
 ```json
 {
-  "command": "sudo usermod -aG docker alice",
-  "explanation": "Add alice to the docker group.",
-  "confidence": 0.83
+    "command": "sudo usermod -aG docker alice",
+    "explanation": "Add alice to the docker group.",
+    "confidence": 0.83
 }
 ```
 
@@ -445,13 +445,13 @@ For state-changing commands:
 
 Each entry should include:
 
-* `intent`
-* `summary`
-* `slots`
-* `template_by_platform`
-* `risk`
-* `review_state`
-* `depends_on`
+- `intent`
+- `summary`
+- `slots`
+- `template_by_platform`
+- `risk`
+- `review_state`
+- `depends_on`
 
 ### 8.2 Example entry
 
@@ -459,15 +459,15 @@ Each entry should include:
 intent: check_port
 summary: Show what process is using a port
 slots:
-  - "port"
+    - "port"
 template_by_platform:
-  linux: "lsof -i :{port}"
-  macos: "lsof -i :{port}"
+    linux: "lsof -i :{port}"
+    macos: "lsof -i :{port}"
 depends_on:
-  linux:
-    - "lsof"
-  macos:
-    - "lsof"
+    linux:
+        - "lsof"
+    macos:
+        - "lsof"
 risk: read_only_local
 review_state: owner_reviewed
 ```
@@ -478,14 +478,14 @@ Another:
 intent: add_user_to_group
 summary: Add a user to group
 slots:
-  - "user"
-  - "group"
+    - "user"
+    - "group"
 template_by_platform:
-  linux: "sudo usermod -aG {group} {user}"
+    linux: "sudo usermod -aG {group} {user}"
 depends_on:
-  linux:
-    - "sudo"
-    - "usermod"
+    linux:
+        - "sudo"
+        - "usermod"
 risk: privileged
 review_state: owner_reviewed
 ```
@@ -529,22 +529,22 @@ Choose: 2
 
 ### 9.1 PATH scan behavior
 
-* iterate over PATH directories
-* gather executable base names
-* deduplicate
-* classify system builtin vs custom binary
-* store in cache
+- iterate over PATH directories
+- gather executable base names
+- deduplicate
+- classify system builtin vs custom binary
+- store in cache
 
 Cache file example:
 
 ```json
 {
-  "generated_at": 1775246000,
-  "shell": "bash",
-  "os": "linux",
-  "commands": {
-    builtin: ["bash", "lsof", "ss", "usermod", "id", "groups"],
-    installed: ["docker", "git"]
-  }
+    "generated_at": 1775246000,
+    "shell": "bash",
+    "os": "linux",
+    "commands": {
+        "builtin": ["bash", "lsof", "ss", "usermod", "id", "groups"],
+        "installed": ["docker", "git"]
+    }
 }
 ```

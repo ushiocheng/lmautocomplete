@@ -1,0 +1,10 @@
+intent: list_running_docker_containers
+summary: Display a list of currently active Docker containers.
+slots: []
+template_by_platform:
+  linux: docker ps
+depends_on:
+  linux:
+    - docker
+risk: Safe
+review_state: Owner_Reviewed

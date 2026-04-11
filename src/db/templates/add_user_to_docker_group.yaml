@@ -1,0 +1,12 @@
+intent: add_user_to_docker_group
+summary: Add a user to docker group
+slots:
+    - user
+template_by_platform:
+    linux: "sudo usermod -aG docker {user}"
+depends_on:
+    linux:
+        - sudo
+        - usermod
+risk: Privileged
+review_state: Owner_Reviewed

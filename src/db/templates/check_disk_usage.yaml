@@ -1,0 +1,13 @@
+intent: check_disk_usage
+summary: Identify which directories or files are consuming the most disk space to understand why the disk is full.
+slots:
+  - path
+template_by_platform:
+  linux: du -h --max-depth=1 {path} | sort -hr | head -n 20
+depends_on:
+  linux:
+    - du
+    - sort
+    - head
+risk: Semi_Safe
+review_state: Owner_Reviewed

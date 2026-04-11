@@ -1,0 +1,12 @@
+intent: delete_log_files
+summary: Finds all .log files in a directory tree and deletes them with confirmation for each deletion.
+slots:
+  - directory
+template_by_platform:
+  linux: find {directory} -type f -name "*.log" -exec rm -i {} +
+depends_on:
+  linux:
+    - find
+    - rm
+risk: Mutating
+review_state: Owner_Reviewed

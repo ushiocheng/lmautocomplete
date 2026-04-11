@@ -1,0 +1,12 @@
+intent: check_port_open
+summary: Checks whether a specific TCP port on the local or remote host is reachable.
+slots:
+  - host
+  - port
+template_by_platform:
+  linux: nc -zvw3 {host} {port}
+depends_on:
+  linux:
+    - nc
+risk: Semi_Safe
+review_state: Owner_Reviewed

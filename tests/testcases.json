@@ -1,0 +1,257 @@
+[
+    {
+        "name": "what-can-you-do",
+        "prompt": "What can you do",
+        "shouldError": true
+    },
+    {
+        "name": "ping-google",
+        "prompt": "Ping 'Google.com'",
+        "shouldError": false
+    },
+    {
+        "name": "ping-cf",
+        "prompt": "Ping 1.1.1.1",
+        "shouldError": false
+    },
+    {
+        "name": "check-port-22",
+        "prompt": "Check if port 22 is open",
+        "shouldError": false
+    },
+    {
+        "name": "check-port-8080",
+        "prompt": "Who is using port 8080?",
+        "shouldError": false
+    },
+    {
+        "name": "agt-add-user-alice-to-docker-group",
+        "prompt": "add user alice to docker group",
+        "shouldError": false
+    },
+    {
+        "name": "agt-show-all-running-docker-containers",
+        "prompt": "show all running docker containers",
+        "shouldError": false
+    },
+    {
+        "name": "agt-restart-nginx-service",
+        "prompt": "restart nginx service",
+        "shouldError": false
+    },
+    {
+        "name": "agt-show-disk-usage-of-current-directory",
+        "prompt": "show disk usage of current directory",
+        "shouldError": false
+    },
+    {
+        "name": "agt-find-all-files-named-config.json",
+        "prompt": "find all files named config.json",
+        "shouldError": false
+    },
+    {
+        "name": "agt-list-processes-related-to-python",
+        "prompt": "list processes related to python",
+        "shouldError": false
+    },
+    {
+        "name": "agt-who-is-listening-on-3000",
+        "prompt": "who is listening on 3000",
+        "shouldError": false
+    },
+    {
+        "name": "agt-put-bob-into-docker",
+        "prompt": "put bob into docker",
+        "shouldError": false
+    },
+    {
+        "name": "agt-how-much-space-is-this-folder-taking",
+        "prompt": "how much space is this folder taking",
+        "shouldError": false
+    },
+    {
+        "name": "agt-find-logs-in-this-repo",
+        "prompt": "find logs in this repo",
+        "shouldError": false
+    },
+    {
+        "name": "agt-what-processes-are-eating-memory",
+        "prompt": "what processes are eating memory",
+        "shouldError": false
+    },
+    {
+        "name": "agt-restart-the-service",
+        "prompt": "restart the service",
+        "shouldError": false
+    },
+    {
+        "name": "agt-kill-the-process-on-that-port",
+        "prompt": "kill the process on that port",
+        "shouldError": false
+    },
+    {
+        "name": "agt-add-user-to-group",
+        "prompt": "add user to group",
+        "shouldError": false
+    },
+    {
+        "name": "agt-find-large-files",
+        "prompt": "find large files",
+        "shouldError": false
+    },
+    {
+        "name": "agt-delete-all-log-files",
+        "prompt": "delete all log files",
+        "shouldError": false
+    },
+    {
+        "name": "agt-kill-all-python-processes",
+        "prompt": "kill all python processes",
+        "shouldError": false
+    },
+    {
+        "name": "agt-stop-every-docker-container",
+        "prompt": "stop every docker container",
+        "shouldError": false
+    },
+    {
+        "name": "agt-clear-everything-in-tmp",
+        "prompt": "clear everything in tmp",
+        "shouldError": false
+    },
+    {
+        "name": "agt-recursively-delete-node_modules everywhere",
+        "prompt": "recursively delete node_modules everywhere",
+        "shouldError": false
+    },
+    {
+        "name": "agt-force-kill-everything-on-port-8080",
+        "prompt": "force kill everything on port 8080",
+        "shouldError": false
+    },
+    {
+        "name": "agt-wipe-all-files-in-current-directory",
+        "prompt": "wipe all files in current directory",
+        "shouldError": false
+    },
+    {
+        "name": "agt-uninstall-docker-completely",
+        "prompt": "uninstall docker completely",
+        "shouldError": false
+    },
+    {
+        "name": "agt-ping-google.com",
+        "prompt": "ping google.com",
+        "shouldError": false
+    },
+    {
+        "name": "agt-ping-google.com 3 times",
+        "prompt": "ping google.com 3 times",
+        "shouldError": false
+    },
+    {
+        "name": "agt-curl-google.com",
+        "prompt": "curl google.com",
+        "shouldError": false
+    },
+    {
+        "name": "agt-download-file-from-example.com",
+        "prompt": "download file from https://example.com/file.zip",
+        "shouldError": false
+    },
+    {
+        "name": "agt-extract-archive.tar.gz",
+        "prompt": "extract archive.tar.gz",
+        "shouldError": false
+    },
+    {
+        "name": "agt-kill-process-using-port-8080",
+        "prompt": "kill process using port 8080",
+        "shouldError": false
+    },
+    {
+        "name": "agt-find-all-.log files and delete them",
+        "prompt": "find all .log files and delete them",
+        "shouldError": false
+    },
+    {
+        "name": "agt-list-open-ports-and-filter-for-443",
+        "prompt": "list open ports and filter for 443",
+        "shouldError": false
+    },
+    {
+        "name": "agt-show-top-5 largest files",
+        "prompt": "show top 5 largest files",
+        "shouldError": false
+    },
+    {
+        "name": "agt-who-the-hell-is-using-my-port-8080",
+        "prompt": "who the hell is using my port 8080",
+        "shouldError": false
+    },
+    {
+        "name": "agt-nuke-python-processes",
+        "prompt": "nuke python processes",
+        "shouldError": false
+    },
+    {
+        "name": "agt-make-docker-usable-for-alice",
+        "prompt": "make docker usable for alice",
+        "shouldError": false
+    },
+    {
+        "name": "agt-why-is-my-disk-full",
+        "prompt": "why is my disk full",
+        "shouldError": false
+    },
+    {
+        "name": "agt-show-me-what-is-hogging-cpu",
+        "prompt": "show me what is hogging cpu",
+        "shouldError": false
+    },
+    {
+        "name": "agt-ping-google.com",
+        "prompt": "ping \"google.com\"",
+        "shouldError": false
+    },
+    {
+        "name": "agt-find-files-named-test-file.txt",
+        "prompt": "find files named \"test file.txt\"",
+        "shouldError": false
+    },
+    {
+        "name": "agt-search-for-error-500-in-logs",
+        "prompt": "search for \"error 500\" in logs",
+        "shouldError": false
+    },
+    {
+        "name": "agt-curl-example.com",
+        "prompt": "curl \"https://example.com/api?x=1&y=2\"",
+        "shouldError": false
+    },
+    {
+        "name": "agt-do-the-thing-to-fix-docker-permissions",
+        "prompt": "do the thing to fix docker permissions",
+        "shouldError": true
+    },
+    {
+        "name": "agt-make-port-8080 free",
+        "prompt": "make port 8080 free",
+        "shouldError": true
+    },
+    {
+        "name": "agt-stop-whatever-is-using-too-much-memory",
+        "prompt": "stop whatever is using too much memory",
+        "shouldError": true
+    },
+    {
+        "name": "agt-clean-up-my-system",
+        "prompt": "clean up my system",
+        "shouldError": true
+    },
+    {
+        "name": "agt-fix-my-network",
+        "prompt": "fix my network",
+        "shouldError": true
+    }
+]

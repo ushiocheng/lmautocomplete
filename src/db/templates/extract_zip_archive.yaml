@@ -1,0 +1,12 @@
+intent: extract_zip_archive
+summary: Extracts the contents of a .zip archive.
+slots:
+  - archive_path
+  - destination
+template_by_platform:
+  linux: mkdir -p {destination} && unzip {archive_path} -d {destination}
+depends_on:
+  linux:
+    - unzip
+risk: Semi_Safe
+review_state: Owner_Reviewed
