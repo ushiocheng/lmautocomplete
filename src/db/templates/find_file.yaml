@@ -8,5 +8,6 @@ template_by_platform:
 depends_on:
   linux:
     - find
+    - less
 risk: Safe
 review_state: Owner_Reviewed
